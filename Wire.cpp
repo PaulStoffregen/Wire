@@ -19,6 +19,507 @@
   Modified 2012 by Todd Krein (todd@krein.org) to implement repeated starts
 */
 
+#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__)
+
+#include "kinetis.h"
+#include <string.h> // for memcpy
+#include "core_pins.h"
+//#include "HardwareSerial.h"
+#include "Wire.h"
+
+uint8_t TwoWire::rxBuffer[BUFFER_LENGTH];
+uint8_t TwoWire::rxBufferIndex = 0;
+uint8_t TwoWire::rxBufferLength = 0;
+//uint8_t TwoWire::txAddress = 0;
+uint8_t TwoWire::txBuffer[BUFFER_LENGTH+1];
+uint8_t TwoWire::txBufferIndex = 0;
+uint8_t TwoWire::txBufferLength = 0;
+uint8_t TwoWire::transmitting = 0;
+void (*TwoWire::user_onRequest)(void) = NULL;
+void (*TwoWire::user_onReceive)(int) = NULL;
+
+
+TwoWire::TwoWire()
+{
+}
+
+static uint8_t slave_mode = 0;
+static uint8_t irqcount=0;
+
+
+void TwoWire::begin(void)
+{
+	//serial_begin(BAUD2DIV(115200));
+	//serial_print("\nWire Begin\n");
+
+	slave_mode = 0;
+	SIM_SCGC4 |= SIM_SCGC4_I2C0; // TODO: use bitband
+	I2C0_C1 = 0;
+	// On Teensy 3.0 external pullup resistors *MUST* be used
+	// the PORT_PCR_PE bit is ignored when in I2C mode
+	// I2C will not work at all without pullup resistors
+	// It might seem like setting PORT_PCR_PE & PORT_PCR_PS
+	// would enable pullup resistors.  However, there seems
+	// to be a bug in chip while I2C is enabled, where setting
+	// those causes the port to be driven strongly high.
+	CORE_PIN18_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+	CORE_PIN19_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+	setClock(100000);
+	I2C0_C2 = I2C_C2_HDRS;
+	I2C0_C1 = I2C_C1_IICEN;
+	//pinMode(3, OUTPUT);
+	//pinMode(4, OUTPUT);
+}
+
+void TwoWire::setClock(uint32_t frequency)
+{
+#if F_BUS == 60000000
+	if (frequency < 400000) {
+		I2C0_F = 0x2C;	// 104 kHz
+	} else if (frequency < 1000000) {
+		I2C0_F = 0x1C; // 416 kHz
+	} else {
+		I2C0_F = 0x12; // 938 kHz
+	}
+	I2C0_FLT = 4;
+#elif F_BUS == 56000000
+	if (frequency < 400000) {
+		I2C0_F = 0x2B;	// 109 kHz
+	} else if (frequency < 1000000) {
+		I2C0_F = 0x1C; // 389 kHz
+	} else {
+		I2C0_F = 0x0E; // 1 MHz
+	}
+	I2C0_FLT = 4;
+#elif F_BUS == 48000000
+	if (frequency < 400000) {
+		I2C0_F = 0x27;	// 100 kHz
+	} else if (frequency < 1000000) {
+		I2C0_F = 0x1A; // 400 kHz
+	} else {
+		I2C0_F = 0x0D; // 1 MHz
+	}
+	I2C0_FLT = 4;
+#elif F_BUS == 40000000
+	if (frequency < 400000) {
+		I2C0_F = 0x29;	// 104 kHz
+	} else if (frequency < 1000000) {
+		I2C0_F = 0x19; // 416 kHz
+	} else {
+		I2C0_F = 0x0B; // 1 MHz
+	}
+	I2C0_FLT = 3;
+#elif F_BUS == 36000000
+	if (frequency < 400000) {
+		I2C0_F = 0x28;	// 113 kHz
+	} else if (frequency < 1000000) {
+		I2C0_F = 0x19; // 375 kHz
+	} else {
+		I2C0_F = 0x0A; // 1 MHz
+	}
+	I2C0_FLT = 3;
+#elif F_BUS == 24000000
+	if (frequency < 400000) {
+		I2C0_F = 0x1F; // 100 kHz
+	} else if (frequency < 1000000) {
+		I2C0_F = 0x12; // 375 kHz
+	} else {
+		I2C0_F = 0x02; // 1 MHz
+	}
+	I2C0_FLT = 2;
+#elif F_BUS == 16000000
+	if (frequency < 400000) {
+		I2C0_F = 0x20; // 100 kHz
+	} else if (frequency < 1000000) {
+		I2C0_F = 0x07; // 400 kHz
+	} else {
+		I2C0_F = 0x00; // 800 MHz
+	}
+	I2C0_FLT = 1;
+#elif F_BUS == 8000000
+	if (frequency < 400000) {
+		I2C0_F = 0x14; // 100 kHz
+	} else {
+		I2C0_F = 0x00; // 400 kHz
+	}
+	I2C0_FLT = 1;
+#elif F_BUS == 4000000
+	if (frequency < 400000) {
+		I2C0_F = 0x07; // 100 kHz
+	} else {
+		I2C0_F = 0x00; // 200 kHz
+	}
+	I2C0_FLT = 1;
+#elif F_BUS == 2000000
+	I2C0_F = 0x00; // 100 kHz
+	I2C0_FLT = 1;
+#else
+#error "F_BUS must be 60, 56, 48, 40, 36, 24, 16, 8, 4 or 2 MHz"
+#endif
+}
+
+void TwoWire::begin(uint8_t address)
+{
+	begin();
+	I2C0_A1 = address << 1;
+	slave_mode = 1;
+	I2C0_C1 = I2C_C1_IICEN | I2C_C1_IICIE;
+	NVIC_ENABLE_IRQ(IRQ_I2C0);
+}
+
+void i2c0_isr(void)
+{
+	uint8_t status, c1, data;
+	static uint8_t receiving=0;
+
+	status = I2C0_S;
+	//serial_print(".");
+	if (status & I2C_S_ARBL) {
+		// Arbitration Lost
+		I2C0_S = I2C_S_ARBL;
+		//serial_print("a");
+		if (receiving && TwoWire::rxBufferLength > 0) {
+			// TODO: does this detect the STOP condition in slave receive mode?
+
+
+		}
+		if (!(status & I2C_S_IAAS)) return;
+	}
+	if (status & I2C_S_IAAS) {
+		//serial_print("\n");
+		// Addressed As A Slave
+		if (status & I2C_S_SRW) {
+			//serial_print("T");
+			// Begin Slave Transmit
+			receiving = 0;
+			TwoWire::txBufferLength = 0;
+			if (TwoWire::user_onRequest != NULL) {
+				TwoWire::user_onRequest();
+			}
+			if (TwoWire::txBufferLength == 0) {
+				// is this correct, transmitting a single zero
+				// when we should send nothing?  Arduino's AVR
+				// implementation does this, but is it ok?
+				TwoWire::txBufferLength = 1;
+				TwoWire::txBuffer[0] = 0;
+			}
+			I2C0_C1 = I2C_C1_IICEN | I2C_C1_IICIE | I2C_C1_TX;
+			I2C0_D = TwoWire::txBuffer[0];
+			TwoWire::txBufferIndex = 1;
+		} else {
+			// Begin Slave Receive
+			//serial_print("R");
+			receiving = 1;
+			TwoWire::rxBufferLength = 0;
+			I2C0_C1 = I2C_C1_IICEN | I2C_C1_IICIE;
+			data = I2C0_D;
+		}
+		I2C0_S = I2C_S_IICIF;
+		return;
+	}
+	#if defined(KINETISL)
+	c1 = I2C0_FLT;
+	if ((c1 & I2C_FLT_STOPF) && (c1 & I2C_FLT_STOPIE)) {
+		I2C0_FLT = c1 & ~I2C_FLT_STOPIE;
+		if (TwoWire::user_onReceive != NULL) {
+			TwoWire::rxBufferIndex = 0;
+			TwoWire::user_onReceive(TwoWire::rxBufferLength);
+		}
+	}
+	#endif
+	c1 = I2C0_C1;
+	if (c1 & I2C_C1_TX) {
+		// Continue Slave Transmit
+		//serial_print("t");
+		if ((status & I2C_S_RXAK) == 0) {
+			//serial_print(".");
+			// Master ACK'd previous byte
+			if (TwoWire::txBufferIndex < TwoWire::txBufferLength) {
+				I2C0_D = TwoWire::txBuffer[TwoWire::txBufferIndex++];
+			} else {
+				I2C0_D = 0;
+			}
+			I2C0_C1 = I2C_C1_IICEN | I2C_C1_IICIE | I2C_C1_TX;
+		} else {
+			//serial_print("*");
+			// Master did not ACK previous byte
+			I2C0_C1 = I2C_C1_IICEN | I2C_C1_IICIE;
+			data = I2C0_D;
+		}
+	} else {
+		// Continue Slave Receive
+		irqcount = 0;
+		#if defined(KINETISK)
+		attachInterrupt(18, TwoWire::sda_rising_isr, RISING);
+		#elif defined(KINETISL)
+		I2C0_FLT |= I2C_FLT_STOPIE;
+		#endif
+		//digitalWriteFast(4, HIGH);
+		data = I2C0_D;
+		//serial_phex(data);
+		if (TwoWire::rxBufferLength < BUFFER_LENGTH && receiving) {
+			TwoWire::rxBuffer[TwoWire::rxBufferLength++] = data;
+		}
+		//digitalWriteFast(4, LOW);
+	}
+	I2C0_S = I2C_S_IICIF;
+}
+
+// Detects the stop condition that terminates a slave receive transfer.
+// Sadly, the I2C in Kinetis K series lacks the stop detect interrupt
+// This pin change interrupt hack is needed to detect the stop condition
+void TwoWire::sda_rising_isr(void)
+{
+	//digitalWrite(3, HIGH);
+	if (!(I2C0_S & I2C_S_BUSY)) {
+		detachInterrupt(18);
+		if (user_onReceive != NULL) {
+			rxBufferIndex = 0;
+			user_onReceive(rxBufferLength);
+		}
+		//delayMicroseconds(100);
+	} else {
+		if (++irqcount >= 2 || !slave_mode) {
+			detachInterrupt(18);
+		}
+	}
+	//digitalWrite(3, LOW);
+}
+
+
+// Chapter 44: Inter-Integrated Circuit (I2C) - Page 1012
+//  I2C0_A1      // I2C Address Register 1
+//  I2C0_F       // I2C Frequency Divider register
+//  I2C0_C1      // I2C Control Register 1
+//  I2C0_S       // I2C Status register
+//  I2C0_D       // I2C Data I/O register
+//  I2C0_C2      // I2C Control Register 2
+//  I2C0_FLT     // I2C Programmable Input Glitch Filter register
+
+
+static void i2c_wait(void)
+{
+	while (!(I2C0_S & I2C_S_IICIF)) ; // wait
+	I2C0_S = I2C_S_IICIF;
+}
+
+void TwoWire::beginTransmission(uint8_t address)
+{
+	txBuffer[0] = (address << 1);
+	transmitting = 1;
+	txBufferLength = 1;
+}
+
+size_t TwoWire::write(uint8_t data)
+{
+	if (transmitting || slave_mode) {
+		if (txBufferLength >= BUFFER_LENGTH+1) {
+			setWriteError();
+			return 0;
+		}
+		txBuffer[txBufferLength++] = data;
+		return 1;
+	}
+	return 0;
+}
+
+size_t TwoWire::write(const uint8_t *data, size_t quantity)
+{
+	if (transmitting || slave_mode) {
+		size_t avail = BUFFER_LENGTH+1 - txBufferLength;
+		if (quantity > avail) {
+			quantity = avail;
+			setWriteError();
+		}
+		memcpy(txBuffer + txBufferLength, data, quantity);
+		txBufferLength += quantity;
+		return quantity;
+	}
+	return 0;
+}
+
+void TwoWire::flush(void)
+{
+}
+
+
+uint8_t TwoWire::endTransmission(uint8_t sendStop)
+{
+	uint8_t i, status, ret=0;
+
+	// clear the status flags
+	I2C0_S = I2C_S_IICIF | I2C_S_ARBL;
+	// now take control of the bus...
+	if (I2C0_C1 & I2C_C1_MST) {
+		// we are already the bus master, so send a repeated start
+		I2C0_C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_RSTA | I2C_C1_TX;
+	} else {
+		// we are not currently the bus master, so wait for bus ready
+		while (I2C0_S & I2C_S_BUSY) ;
+		// become the bus master in transmit mode (send start)
+		slave_mode = 0;
+		I2C0_C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_TX;
+	}
+	// transmit the address and data
+	for (i=0; i < txBufferLength; i++) {
+		I2C0_D = txBuffer[i];
+		i2c_wait();
+		status = I2C0_S;
+		if (status & I2C_S_RXAK) {
+			// the slave device did not acknowledge
+			if (i == 0) {
+				ret = 2; // 2:received NACK on transmit of address
+			} else {
+				ret = 3; // 3:received NACK on transmit of data 
+			}
+			break;
+		}
+		if ((status & I2C_S_ARBL)) {
+			// we lost bus arbitration to another master
+			// TODO: what is the proper thing to do here??
+			ret = 4; // 4:other error 
+			break;
+		}
+	}
+	if (sendStop) {
+		// send the stop condition
+		I2C0_C1 = I2C_C1_IICEN;
+		// TODO: do we wait for this somehow?
+	}
+	transmitting = 0;
+	return ret;
+}
+
+
+uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
+{
+	uint8_t tmp __attribute__((unused));
+	uint8_t status, count=0;
+
+	rxBufferIndex = 0;
+	rxBufferLength = 0;
+	//serial_print("requestFrom\n");
+	// clear the status flags
+	I2C0_S = I2C_S_IICIF | I2C_S_ARBL;
+	// now take control of the bus...
+	if (I2C0_C1 & I2C_C1_MST) {
+		// we are already the bus master, so send a repeated start
+		I2C0_C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_RSTA | I2C_C1_TX;
+	} else {
+		// we are not currently the bus master, so wait for bus ready
+		while (I2C0_S & I2C_S_BUSY) ;
+		// become the bus master in transmit mode (send start)
+		slave_mode = 0;
+		I2C0_C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_TX;
+	}
+	// send the address
+	I2C0_D = (address << 1) | 1;
+	i2c_wait();
+	status = I2C0_S;
+	if ((status & I2C_S_RXAK) || (status & I2C_S_ARBL)) {
+		// the slave device did not acknowledge
+		// or we lost bus arbitration to another master
+		I2C0_C1 = I2C_C1_IICEN;
+		return 0;
+	}
+	if (length == 0) {
+		// TODO: does anybody really do zero length reads?
+		// if so, does this code really work?
+		I2C0_C1 = I2C_C1_IICEN | (sendStop ? 0 : I2C_C1_MST);
+		return 0;
+	} else if (length == 1) {
+		I2C0_C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_TXAK;
+	} else {
+		I2C0_C1 = I2C_C1_IICEN | I2C_C1_MST;
+	}
+	tmp = I2C0_D; // initiate the first receive
+	while (length > 1) {
+		i2c_wait();
+		length--;
+		if (length == 1) I2C0_C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_TXAK;
+		rxBuffer[count++] = I2C0_D;
+	}
+	i2c_wait();
+	I2C0_C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_TX;
+	rxBuffer[count++] = I2C0_D;
+	if (sendStop) I2C0_C1 = I2C_C1_IICEN;
+	rxBufferLength = count;
+	return count;
+}
+
+int TwoWire::available(void)
+{
+	return rxBufferLength - rxBufferIndex;
+}
+
+int TwoWire::read(void)
+{
+	if (rxBufferIndex >= rxBufferLength) return -1;
+	return rxBuffer[rxBufferIndex++];
+}
+
+int TwoWire::peek(void)
+{
+	if (rxBufferIndex >= rxBufferLength) return -1;
+	return rxBuffer[rxBufferIndex];
+}
+
+
+
+
+
+// alternate function prototypes
+
+uint8_t TwoWire::requestFrom(uint8_t address, uint8_t quantity)
+{
+  return requestFrom((uint8_t)address, (uint8_t)quantity, (uint8_t)true);
+}
+
+uint8_t TwoWire::requestFrom(int address, int quantity)
+{
+  return requestFrom((uint8_t)address, (uint8_t)quantity, (uint8_t)true);
+}
+
+uint8_t TwoWire::requestFrom(int address, int quantity, int sendStop)
+{
+  return requestFrom((uint8_t)address, (uint8_t)quantity, (uint8_t)sendStop);
+}
+
+void TwoWire::beginTransmission(int address)
+{
+	beginTransmission((uint8_t)address);
+}
+
+uint8_t TwoWire::endTransmission(void)
+{
+	return endTransmission(true);
+}
+
+void TwoWire::begin(int address)
+{
+	begin((uint8_t)address);
+}
+
+void TwoWire::onReceive( void (*function)(int) )
+{
+	user_onReceive = function;
+}
+
+void TwoWire::onRequest( void (*function)(void) )
+{
+	user_onRequest = function;
+}
+
+//TwoWire Wire = TwoWire();
+TwoWire Wire;
+
+
+#endif // __MK20DX128__ || __MK20DX256__
+
+
+
+#if defined(__AVR__)
+
 extern "C" {
   #include <stdlib.h>
   #include <string.h>
@@ -73,6 +574,11 @@ void TwoWire::begin(uint8_t address)
 void TwoWire::begin(int address)
 {
   begin((uint8_t)address);
+}
+
+void TwoWire::setClock(uint32_t frequency)
+{
+  TWBR = ((F_CPU / frequency) - 16) / 2;
 }
 
 uint8_t TwoWire::requestFrom(uint8_t address, uint8_t quantity, uint8_t sendStop)
@@ -296,3 +802,4 @@ void TwoWire::onRequest( void (*function)(void) )
 
 TwoWire Wire = TwoWire();
 
+#endif // __AVR__

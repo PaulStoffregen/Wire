@@ -19,6 +19,7 @@
   Modified 2012 by Todd Krein (todd@krein.org) to implement repeated starts
 */
 
+#if defined(__AVR__)
 #include <math.h>
 #include <stdlib.h>
 #include <inttypes.h>
@@ -26,6 +27,7 @@
 #include <avr/interrupt.h>
 #include <compat/twi.h>
 #include "Arduino.h" // for digitalWrite
+
 
 #ifndef cbi
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
@@ -360,7 +362,7 @@ void twi_releaseBus(void)
   twi_state = TWI_READY;
 }
 
-ISR(TWI_vect)
+SIGNAL(TWI_vect)
 {
   switch(TW_STATUS){
     // All Master
@@ -524,4 +526,4 @@ ISR(TWI_vect)
       break;
   }
 }
-
+#endif // __AVR__
