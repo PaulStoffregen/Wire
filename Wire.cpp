@@ -296,10 +296,27 @@ void TwoWire::sda_rising_isr(void)
 //  I2C0_C2      // I2C Control Register 2
 //  I2C0_FLT     // I2C Programmable Input Glitch Filter register
 
+static uint8_t i2c_status(void)
+{
+	static uint32_t p=0xFFFF;
+	uint32_t s = I2C0_S;
+	if (s != p) {
+		//Serial.printf("(%02X)", s);
+		p = s;
+	}
+	return s;
+}
 
 static void i2c_wait(void)
 {
+#if 0
 	while (!(I2C0_S & I2C_S_IICIF)) ; // wait
+	I2C0_S = I2C_S_IICIF;
+#endif
+	//Serial.write('^');
+	while (1) {
+		if ((i2c_status() & I2C_S_IICIF)) break;
+	}
 	I2C0_S = I2C_S_IICIF;
 }
 
@@ -352,19 +369,57 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 	// now take control of the bus...
 	if (I2C0_C1 & I2C_C1_MST) {
 		// we are already the bus master, so send a repeated start
+		//Serial.print("rstart:");
 		I2C0_C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_RSTA | I2C_C1_TX;
 	} else {
 		// we are not currently the bus master, so wait for bus ready
-		while (I2C0_S & I2C_S_BUSY) ;
+		//Serial.print("busy:");
+		uint32_t wait_begin = millis();
+		while (i2c_status() & I2C_S_BUSY) {
+			//Serial.write('.') ;
+			if (millis() - wait_begin > 15) {
+				// bus stuck busy too long
+				I2C0_C1 = 0;
+				I2C0_C1 = I2C_C1_IICEN;
+				//Serial.println("abort");
+				return 4;
+			}
+		}
 		// become the bus master in transmit mode (send start)
 		slave_mode = 0;
 		I2C0_C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_TX;
 	}
+	// wait until start condition establishes control of the bus
+	while (1) {
+		status = i2c_status();
+		if ((status & I2C_S_BUSY)) break;
+	}
 	// transmit the address and data
 	for (i=0; i < txBufferLength; i++) {
 		I2C0_D = txBuffer[i];
-		i2c_wait();
-		status = I2C0_S;
+		//Serial.write('^');
+		while (1) {
+			status = i2c_status();
+			if ((status & I2C_S_IICIF)) break;
+			if (!(status & I2C_S_BUSY)) break;
+		}
+		I2C0_S = I2C_S_IICIF;
+		//Serial.write('$');
+		status = i2c_status();
+		if ((status & I2C_S_ARBL)) {
+			// we lost bus arbitration to another master
+			// TODO: what is the proper thing to do here??
+			//Serial.printf(" c1=%02X ", I2C0_C1);
+			I2C0_C1 = I2C_C1_IICEN;
+			ret = 4; // 4:other error
+			break;
+		}
+		if (!(status & I2C_S_BUSY)) {
+			// suddenly lost control of the bus!
+			I2C0_C1 = I2C_C1_IICEN;
+			ret = 4; // 4:other error
+			break;
+		}
 		if (status & I2C_S_RXAK) {
 			// the slave device did not acknowledge
 			if (i == 0) {
@@ -372,12 +427,7 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 			} else {
 				ret = 3; // 3:received NACK on transmit of data 
 			}
-			break;
-		}
-		if ((status & I2C_S_ARBL)) {
-			// we lost bus arbitration to another master
-			// TODO: what is the proper thing to do here??
-			ret = 4; // 4:other error 
+			sendStop = 1;
 			break;
 		}
 	}
@@ -387,6 +437,8 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 		// TODO: do we wait for this somehow?
 	}
 	transmitting = 0;
+	//Serial.print(" ret=");
+	//Serial.println(ret);
 	return ret;
 }
 
@@ -407,7 +459,7 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 		I2C0_C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_RSTA | I2C_C1_TX;
 	} else {
 		// we are not currently the bus master, so wait for bus ready
-		while (I2C0_S & I2C_S_BUSY) ;
+		while (i2c_status() & I2C_S_BUSY) ;
 		// become the bus master in transmit mode (send start)
 		slave_mode = 0;
 		I2C0_C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_TX;
@@ -415,7 +467,7 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 	// send the address
 	I2C0_D = (address << 1) | 1;
 	i2c_wait();
-	status = I2C0_S;
+	status = i2c_status();
 	if ((status & I2C_S_RXAK) || (status & I2C_S_ARBL)) {
 		// the slave device did not acknowledge
 		// or we lost bus arbitration to another master
