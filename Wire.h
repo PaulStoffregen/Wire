@@ -26,6 +26,7 @@
 #include "Arduino.h"
 
 #define BUFFER_LENGTH 32
+#define WIRE_HAS_END 1
 
 extern "C" void i2c0_isr(void);
 
@@ -53,6 +54,7 @@ class TwoWire : public Stream
     void begin();
     void begin(uint8_t);
     void begin(int);
+    void end();
     void setClock(uint32_t);
     void beginTransmission(uint8_t);
     void beginTransmission(int);

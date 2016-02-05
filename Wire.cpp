@@ -167,6 +167,15 @@ void TwoWire::begin(uint8_t address)
 	NVIC_ENABLE_IRQ(IRQ_I2C0);
 }
 
+void TwoWire::end()
+{
+	NVIC_DISABLE_IRQ(IRQ_I2C0);
+	I2C0_C1 = 0;
+	CORE_PIN18_CONFIG = 0;
+	CORE_PIN19_CONFIG = 0;
+	SIM_SCGC4 &= ~SIM_SCGC4_I2C0; // TODO: use bitband
+}
+
 void i2c0_isr(void)
 {
 	uint8_t status, c1, data;
@@ -626,6 +635,13 @@ void TwoWire::begin(uint8_t address)
 void TwoWire::begin(int address)
 {
   begin((uint8_t)address);
+}
+
+void TwoWire::end()
+{
+  TWCR &= ~(_BV(TWEN) | _BV(TWIE) | _BV(TWEA));
+  digitalWrite(SDA, 0);
+  digitalWrite(SCL, 0);
 }
 
 void TwoWire::setClock(uint32_t frequency)
