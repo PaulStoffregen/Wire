@@ -35,7 +35,7 @@ void setup() {
   Wire.begin();
   Serial.begin(9600);
   while (!Serial);        // Leonardo: wait for serial monitor
-  Serial.println("\nI2C Scanner");
+  Serial.println(F("\nI2C Scanner"));
 }
 
 
@@ -43,7 +43,7 @@ void loop() {
   byte error, address;
   int nDevices;
 
-  Serial.println("Scanning...");
+  Serial.println(F("Scanning..."));
 
   nDevices = 0;
   for (address = 1; address < 127; address++) {
@@ -54,16 +54,18 @@ void loop() {
     error = Wire.endTransmission();
 
     if (error == 0) {
-      Serial.print("Device found at address 0x");
+      Serial.print(F("Device found at address 0x"));
       if (address < 16) {
         Serial.print("0");
       }
       Serial.print(address,HEX);
-      Serial.println();
+      Serial.print("  (");
+      printKnownChips(address);
+      Serial.println(")");
 
       nDevices++;
     } else if (error==4) {
-      Serial.print("Unknown error at address 0x");
+      Serial.print(F("Unknown error at address 0x"));
       if (address < 16) {
         Serial.print("0");
       }
@@ -71,10 +73,69 @@ void loop() {
     }
   }
   if (nDevices == 0) {
-    Serial.println("No I2C devices found\n");
+    Serial.println(F("No I2C devices found\n"));
   } else {
-    Serial.println("done\n");
+    Serial.println(F("done\n"));
   }
   delay(5000);           // wait 5 seconds for next scan
 }
 
+
+void printKnownChips(byte address)
+{
+  switch (address) {
+    case 0x0A: Serial.print(F("SGTL5000")); break;
+    case 0x0C: Serial.print(F("AK8963")); break;
+    case 0x10: Serial.print(F("CS4272")); break;
+    case 0x11: Serial.print(F("Si4713")); break;
+    case 0x13: Serial.print(F("VCNL4000,AK4558")); break;
+    case 0x19: Serial.print(F("LSM303")); break;
+    case 0x1A: Serial.print(F("WM8731")); break;
+    case 0x1D: Serial.print(F("LSM9DS0,ADXL345,MMA7455L")); break;
+    case 0x1E: Serial.print(F("LSM303,HMC5883L,FXOS8700")); break;
+    case 0x20: Serial.print(F("MCP23017,FXAS21002")); break;
+    case 0x21: Serial.print(F("MCP23017")); break;
+    case 0x22: Serial.print(F("MCP23017")); break;
+    case 0x23: Serial.print(F("MCP23017")); break;
+    case 0x24: Serial.print(F("MCP23017")); break;
+    case 0x25: Serial.print(F("MCP23017")); break;
+    case 0x26: Serial.print(F("MCP23017")); break;
+    case 0x27: Serial.print(F("MCP23017")); break;
+    case 0x28: Serial.print(F("BNO055")); break;
+    case 0x29: Serial.print(F("TSL2561,VL6180")); break;
+    case 0x2A: Serial.print(F("SGTL5000")); break;
+    case 0x38: Serial.print(F("RA8875,FT6206")); break;
+    case 0x3C: Serial.print(F("SSD1306")); break;
+    case 0x3D: Serial.print(F("SSD1306")); break;
+    case 0x40: Serial.print(F("PCA9685")); break;
+    case 0x41: Serial.print(F("STMPE610,PCA9685")); break;
+    case 0x42: Serial.print(F("PCA9685")); break;
+    case 0x43: Serial.print(F("PCA9685")); break;
+    case 0x44: Serial.print(F("PCA9685")); break;
+    case 0x45: Serial.print(F("PCA9685")); break;
+    case 0x46: Serial.print(F("PCA9685")); break;
+    case 0x47: Serial.print(F("PCA9685")); break;
+    case 0x48: Serial.print(F("ADS1115,PN532,TMP102")); break;
+    case 0x49: Serial.print(F("ADS1115")); break;
+    case 0x4A: Serial.print(F("ADS1115")); break;
+    case 0x4B: Serial.print(F("ADS1115,TMP102")); break;
+    case 0x50: Serial.print(F("EEPROM")); break;
+    case 0x51: Serial.print(F("EEPROM")); break;
+    case 0x52: Serial.print(F("Nunchuck,EEPROM")); break;
+    case 0x53: Serial.print(F("ADXL345,EEPROM")); break;
+    case 0x54: Serial.print(F("EEPROM")); break;
+    case 0x55: Serial.print(F("EEPROM")); break;
+    case 0x56: Serial.print(F("EEPROM")); break;
+    case 0x57: Serial.print(F("EEPROM")); break;
+    case 0x58: Serial.print(F("TPA2016")); break;
+    case 0x5A: Serial.print(F("MPR121")); break;
+    case 0x60: Serial.print(F("MPL3115,MCP4725,MCP4728,TEA5767,Si5351")); break;
+    case 0x61: Serial.print(F("MCP4725")); break;
+    case 0x62: Serial.print(F("LidarLite")); break;
+    case 0x68: Serial.print(F("MPU9250,ITG3200,DS1307,DS3231")); break;
+    case 0x6B: Serial.print(F("LSM9DS0")); break;
+    case 0x76: Serial.print(F("MS5607,MS5611")); break;
+    case 0x77: Serial.print(F("BMP085,BMA180")); break;
+    default: Serial.print(F("unknown chip"));
+  }
+}
