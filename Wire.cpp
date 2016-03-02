@@ -19,7 +19,9 @@
   Modified 2012 by Todd Krein (todd@krein.org) to implement repeated starts
 */
 
-#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__) || defined(__MK64FX512__) || defined(__MK66FX1M0__)
+#include "Wire.h"
+
+#if defined(__arm__) && defined(CORE_TEENSY)
 
 #include "kinetis.h"
 #include <string.h> // for memcpy
@@ -30,11 +32,12 @@
 uint8_t TwoWire::rxBuffer[BUFFER_LENGTH];
 uint8_t TwoWire::rxBufferIndex = 0;
 uint8_t TwoWire::rxBufferLength = 0;
-//uint8_t TwoWire::txAddress = 0;
 uint8_t TwoWire::txBuffer[BUFFER_LENGTH+1];
 uint8_t TwoWire::txBufferIndex = 0;
 uint8_t TwoWire::txBufferLength = 0;
 uint8_t TwoWire::transmitting = 0;
+uint8_t TwoWire::sda_pin_num = 18;
+uint8_t TwoWire::scl_pin_num = 19;
 void (*TwoWire::user_onRequest)(void) = NULL;
 void (*TwoWire::user_onReceive)(int) = NULL;
 
@@ -62,8 +65,16 @@ void TwoWire::begin(void)
 	// would enable pullup resistors.  However, there seems
 	// to be a bug in chip while I2C is enabled, where setting
 	// those causes the port to be driven strongly high.
-	CORE_PIN18_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
-	CORE_PIN19_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+	if (sda_pin_num == 18) {
+		CORE_PIN18_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+	} else if (sda_pin_num == 17) {
+		CORE_PIN17_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+	}
+	if (scl_pin_num == 19) {
+		CORE_PIN19_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+	} else if (scl_pin_num == 16) {
+		CORE_PIN16_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+	}
 	setClock(100000);
 	I2C0_C2 = I2C_C2_HDRS;
 	I2C0_C1 = I2C_C1_IICEN;
@@ -156,6 +167,42 @@ void TwoWire::setClock(uint32_t frequency)
 #else
 #error "F_BUS must be 60, 56, 48, 40, 36, 24, 16, 8, 4 or 2 MHz"
 #endif
+}
+
+void TwoWire::setSDA(uint8_t pin)
+{
+	if (pin == sda_pin_num) return;
+	if ((SIM_SCGC4 & SIM_SCGC4_I2C0)) {
+		if (sda_pin_num == 18) {
+			CORE_PIN18_CONFIG = 0;
+		} else if (sda_pin_num == 17) {
+			CORE_PIN17_CONFIG = 0;
+		}
+		if (pin == 18) {
+			CORE_PIN18_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+		} else if (pin == 17) {
+			CORE_PIN17_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+		}
+	}
+	sda_pin_num = pin;
+}
+
+void TwoWire::setSCL(uint8_t pin)
+{
+	if (pin == scl_pin_num) return;
+	if ((SIM_SCGC4 & SIM_SCGC4_I2C0)) {
+		if (scl_pin_num == 19) {
+			CORE_PIN19_CONFIG = 0;
+		} else if (scl_pin_num == 16) {
+			CORE_PIN16_CONFIG = 0;
+		}
+		if (pin == 19) {
+			CORE_PIN19_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+		} else if (pin == 16) {
+			CORE_PIN16_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+		}
+	}
+	scl_pin_num = pin;
 }
 
 void TwoWire::begin(uint8_t address)
@@ -588,7 +635,6 @@ extern "C" {
   #include "twi.h"
 }
 
-#include "Wire.h"
 
 // Initialize Class Variables //////////////////////////////////////////////////
 
@@ -647,6 +693,14 @@ void TwoWire::end()
 void TwoWire::setClock(uint32_t frequency)
 {
   TWBR = ((F_CPU / frequency) - 16) / 2;
+}
+
+void TwoWire::setSDA(uint8_t pin)
+{
+}
+
+void TwoWire::setSCL(uint8_t pin)
+{
 }
 
 uint8_t TwoWire::requestFrom(uint8_t address, uint8_t quantity, uint8_t sendStop)

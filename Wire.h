@@ -28,7 +28,9 @@
 #define BUFFER_LENGTH 32
 #define WIRE_HAS_END 1
 
+#if defined(__arm__) && defined(CORE_TEENSY)
 extern "C" void i2c0_isr(void);
+#endif
 
 class TwoWire : public Stream
 {
@@ -48,7 +50,11 @@ class TwoWire : public Stream
     static void (*user_onRequest)(void);
     static void (*user_onReceive)(int);
     static void sda_rising_isr(void);
+#if defined(__arm__) && defined(CORE_TEENSY)
+    static uint8_t sda_pin_num;
+    static uint8_t scl_pin_num;
     friend void i2c0_isr(void);
+#endif
   public:
     TwoWire();
     void begin();
@@ -56,6 +62,8 @@ class TwoWire : public Stream
     void begin(int);
     void end();
     void setClock(uint32_t);
+    void setSDA(uint8_t);
+    void setSCL(uint8_t);
     void beginTransmission(uint8_t);
     void beginTransmission(int);
     uint8_t endTransmission(void);
@@ -95,7 +103,7 @@ class TwoWire : public Stream
 
 extern TwoWire Wire;
 
-#if defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MKL26Z64__) || defined(__MK64FX512__) || defined(__MK66FX1M0__)
+#if defined(__arm__) && defined(CORE_TEENSY)
 class TWBRemulation
 {
 public:
