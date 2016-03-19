@@ -555,11 +555,19 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 		i2c_wait();
 		length--;
 		if (length == 1) I2C0_C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_TXAK;
-		rxBuffer[count++] = I2C0_D;
+		if (count < BUFFER_LENGTH) {
+			rxBuffer[count++] = I2C0_D;
+		} else {
+			tmp = I2C0_D;
+		}
 	}
 	i2c_wait();
 	I2C0_C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_TX;
-	rxBuffer[count++] = I2C0_D;
+	if (count < BUFFER_LENGTH) {
+		rxBuffer[count++] = I2C0_D;
+	} else {
+		tmp = I2C0_D;
+	}
 	if (sendStop) I2C0_C1 = I2C_C1_IICEN;
 	rxBufferLength = count;
 	return count;
