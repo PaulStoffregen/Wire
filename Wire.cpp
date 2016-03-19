@@ -220,8 +220,16 @@ void TwoWire::end()
 	if (!(SIM_SCGC4 & SIM_SCGC4_I2C0)) return;
 	NVIC_DISABLE_IRQ(IRQ_I2C0);
 	I2C0_C1 = 0;
-	CORE_PIN18_CONFIG = 0;
-	CORE_PIN19_CONFIG = 0;
+	if (sda_pin_num == 18) {
+		CORE_PIN18_CONFIG = 0;
+	} else if (sda_pin_num == 17) {
+		CORE_PIN17_CONFIG = 0;
+	}
+	if (scl_pin_num == 19) {
+		CORE_PIN19_CONFIG = 0;
+	} else if (scl_pin_num == 16) {
+		CORE_PIN16_CONFIG = 0;
+	}
 	SIM_SCGC4 &= ~SIM_SCGC4_I2C0; // TODO: use bitband
 }
 
