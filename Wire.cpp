@@ -84,6 +84,7 @@ void TwoWire::begin(void)
 
 void TwoWire::setClock(uint32_t frequency)
 {
+	if (!(SIM_SCGC4 & SIM_SCGC4_I2C0)) return;
 #if F_BUS == 60000000
 	if (frequency < 400000) {
 		I2C0_F = 0x2C;	// 104 kHz
@@ -216,6 +217,7 @@ void TwoWire::begin(uint8_t address)
 
 void TwoWire::end()
 {
+	if (!(SIM_SCGC4 & SIM_SCGC4_I2C0)) return;
 	NVIC_DISABLE_IRQ(IRQ_I2C0);
 	I2C0_C1 = 0;
 	CORE_PIN18_CONFIG = 0;
