@@ -110,70 +110,122 @@ public:
 	inline TWBRemulation & operator = (int val) __attribute__((always_inline)) {
 		if (val == 12 || val == ((F_CPU / 400000) - 16) / 2) { // 22, 52, 112
 			I2C0_C1 = 0;
-			#if F_BUS == 60000000
-			I2C0_F = 0x1C; // 416 kHz
+			#if F_BUS == 120000000
+			I2C0_F = I2C_F_DIV288; // 416 kHz
+			#elif F_BUS == 108000000
+			I2C0_F = I2C_F_DIV256; // 422 kHz
+			#elif F_BUS == 96000000
+			I2C0_F = I2C_F_DIV240; // 400 kHz
+			#elif F_BUS == 90000000
+			I2C0_F = I2C_F_DIV224; // 402 kHz
+			#elif F_BUS == 80000000
+			I2C0_F = I2C_F_DIV192; // 416 kHz
+			#elif F_BUS == 72000000
+			I2C0_F = I2C_F_DIV192; // 375 kHz
+			#elif F_BUS == 64000000
+			I2C0_F = I2C_F_DIV160; // 400 kHz
+			#elif F_BUS == 60000000
+			I2C0_F = I2C_F_DIV144; // 416 kHz
 			#elif F_BUS == 56000000
-			I2C0_F = 0x1C; // 389 kHz
+			I2C0_F = I2C_F_DIV144; // 389 kHz
+			#elif F_BUS == 54000000
+			I2C0_F = I2C_F_DIV128; // 422 kHz
 			#elif F_BUS == 48000000
-			I2C0_F = 0x1A; // 400 kHz
+			I2C0_F = I2C_F_DIV112; // 400 kHz
 			#elif F_BUS == 40000000
-			I2C0_F = 0x19; // 416 kHz
+			I2C0_F = I2C_F_DIV96;  // 416 kHz
 			#elif F_BUS == 36000000
-			I2C0_F = 0x19; // 375 kHz
+			I2C0_F = I2C_F_DIV96;  // 375 kHz
 			#elif F_BUS == 24000000
-			I2C0_F = 0x12; // 375 kHz
+			I2C0_F = I2C_F_DIV64;  // 375 kHz
 			#elif F_BUS == 16000000
-			I2C0_F = 0x07; // 400 kHz
+			I2C0_F = I2C_F_DIV40;  // 400 kHz
 			#elif F_BUS == 8000000
-			I2C0_F = 0x00; // 400 kHz
+			I2C0_F = I2C_F_DIV20;  // 400 kHz
 			#elif F_BUS == 4000000
-			I2C0_F = 0x00; // 200 kHz
+			I2C0_F = I2C_F_DIV20;  // 200 kHz
+			#elif F_BUS == 2000000
+			I2C0_F = I2C_F_DIV20;  // 100 kHz
 			#endif
 			I2C0_C1 = I2C_C1_IICEN;
 		} else if (val == 72 || val == ((F_CPU / 100000) - 16) / 2) { // 112, 232, 472
 			I2C0_C1 = 0;
-			#if F_BUS == 60000000
-			I2C0_F = 0x2C; // 104 kHz
+			#if F_BUS == 120000000
+			I2C0_F = I2C_F_DIV1152; // 104 kHz
+			#elif F_BUS == 108000000
+			I2C0_F = I2C_F_DIV1024; // 105 kHz
+			#elif F_BUS == 96000000
+			I2C0_F = I2C_F_DIV960; // 100 kHz
+			#elif F_BUS == 90000000
+			I2C0_F = I2C_F_DIV896; // 100 kHz
+			#elif F_BUS == 80000000
+			I2C0_F = I2C_F_DIV768; // 104 kHz
+			#elif F_BUS == 72000000
+			I2C0_F = I2C_F_DIV640; // 112 kHz
+			#elif F_BUS == 64000000
+			I2C0_F = I2C_F_DIV640; // 100 kHz
+			#elif F_BUS == 60000000
+			I2C0_F = I2C_F_DIV576; // 104 kHz
 			#elif F_BUS == 56000000
-			I2C0_F = 0x2B; // 109 kHz
+			I2C0_F = I2C_F_DIV512; // 109 kHz
+			#elif F_BUS == 54000000
+			I2C0_F = I2C_F_DIV512; // 105 kHz
 			#elif F_BUS == 48000000
-			I2C0_F = 0x27; // 100 kHz
+			I2C0_F = I2C_F_DIV480; // 100 kHz
 			#elif F_BUS == 40000000
-			I2C0_F = 0x29; // 104 kHz
+			I2C0_F = I2C_F_DIV384; // 104 kHz
 			#elif F_BUS == 36000000
-			I2C0_F = 0x28; // 113 kHz
+			I2C0_F = I2C_F_DIV320; // 113 kHz
 			#elif F_BUS == 24000000
-			I2C0_F = 0x1F; // 100 kHz
+			I2C0_F = I2C_F_DIV240; // 100 kHz
 			#elif F_BUS == 16000000
-			I2C0_F = 0x20; // 100 kHz
+			I2C0_F = I2C_F_DIV160; // 100 kHz
 			#elif F_BUS == 8000000
-			I2C0_F = 0x14; // 100 kHz
+			I2C0_F = I2C_F_DIV80; // 100 kHz
 			#elif F_BUS == 4000000
-			I2C0_F = 0x07; // 100 kHz
+			I2C0_F = I2C_F_DIV40; // 100 kHz
 			#elif F_BUS == 2000000
-			I2C0_F = 0x00; // 100 kHz
+			I2C0_F = I2C_F_DIV20; // 100 kHz
 			#endif
 			I2C0_C1 = I2C_C1_IICEN;
 		}
 		return *this;
 	}
 	inline operator int () const __attribute__((always_inline)) {
-		#if F_BUS == 60000000
-		if (I2C0_F == 0x1C) return 12;
+		#if F_BUS == 120000000
+		if (I2C0_F == I2C_F_DIV288) return 12;
+		#elif F_BUS == 108000000
+		if (I2C0_F == I2C_F_DIV256) return 12;
+		#elif F_BUS == 96000000
+		if (I2C0_F == I2C_F_DIV240) return 12;
+		#elif F_BUS == 90000000
+		if (I2C0_F == I2C_F_DIV224) return 12;
+		#elif F_BUS == 80000000
+		if (I2C0_F == I2C_F_DIV192) return 12;
+		#elif F_BUS == 72000000
+		if (I2C0_F == I2C_F_DIV192) return 12;
+		#elif F_BUS == 64000000
+		if (I2C0_F == I2C_F_DIV160) return 12;
+		#elif F_BUS == 60000000
+		if (I2C0_F == I2C_F_DIV144) return 12;
+		#elif F_BUS == 56000000
+		if (I2C0_F == I2C_F_DIV144) return 12;
+		#elif F_BUS == 54000000
+		if (I2C0_F == I2C_F_DIV128) return 12;
 		#elif F_BUS == 48000000
-		if (I2C0_F == 0x1A) return 12;
+		if (I2C0_F == I2C_F_DIV112) return 12;
 		#elif F_BUS == 40000000
-		if (I2C0_F == 0x19) return 12;
+		if (I2C0_F == I2C_F_DIV96) return 12;
 		#elif F_BUS == 36000000
-		if (I2C0_F == 0x19) return 12;
+		if (I2C0_F == I2C_F_DIV96) return 12;
 		#elif F_BUS == 24000000
-		if (I2C0_F == 0x12) return 12;
+		if (I2C0_F == I2C_F_DIV64) return 12;
 		#elif F_BUS == 16000000
-		if (I2C0_F == 0x07) return 12;
+		if (I2C0_F == I2C_F_DIV40) return 12;
 		#elif F_BUS == 8000000
-		if (I2C0_F == 0x00) return 12;
+		if (I2C0_F == I2C_F_DIV20) return 12;
 		#elif F_BUS == 4000000
-		if (I2C0_F == 0x00) return 12;
+		if (I2C0_F == I2C_F_DIV20) return 12;
 		#endif
 		return 72;
 	}

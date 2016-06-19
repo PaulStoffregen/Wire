@@ -85,7 +85,71 @@ void TwoWire::begin(void)
 void TwoWire::setClock(uint32_t frequency)
 {
 	if (!(SIM_SCGC4 & SIM_SCGC4_I2C0)) return;
-#if F_BUS == 60000000
+
+#if F_BUS == 120000000
+	if (frequency < 400000) {
+		I2C0_F = I2C_F_DIV1152; // 104 kHz
+	} else if (frequency < 1000000) {
+		I2C0_F = I2C_F_DIV288; // 416 kHz
+	} else {
+		I2C0_F = I2C_F_DIV128; // 0.94 MHz
+	}
+	I2C0_FLT = 4;
+#elif F_BUS == 108000000
+	if (frequency < 400000) {
+		I2C0_F = I2C_F_DIV1024; // 105 kHz
+	} else if (frequency < 1000000) {
+		I2C0_F = I2C_F_DIV256; //  422 kHz
+	} else {
+		I2C0_F = I2C_F_DIV112; // 0.96 MHz
+	}
+	I2C0_FLT = 4;
+#elif F_BUS == 96000000
+	if (frequency < 400000) {
+		I2C0_F = I2C_F_DIV960; // 100 kHz
+	} else if (frequency < 1000000) {
+		I2C0_F = I2C_F_DIV240; // 400 kHz
+	} else {
+		I2C0_F = I2C_F_DIV96; // 1.0 MHz
+	}
+	I2C0_FLT = 4;
+#elif F_BUS == 90000000
+	if (frequency < 400000) {
+		I2C0_F = I2C_F_DIV896; // 100 kHz
+	} else if (frequency < 1000000) {
+		I2C0_F = I2C_F_DIV224; // 402 kHz
+	} else {
+		I2C0_F = I2C_F_DIV88; // 1.02 MHz
+	}
+	I2C0_FLT = 4;
+#elif F_BUS == 80000000
+	if (frequency < 400000) {
+		I2C0_F = I2C_F_DIV768; // 104 kHz
+	} else if (frequency < 1000000) {
+		I2C0_F = I2C_F_DIV192; // 416 kHz
+	} else {
+		I2C0_F = I2C_F_DIV80; // 1.0 MHz
+	}
+	I2C0_FLT = 4;
+#elif F_BUS == 72000000
+	if (frequency < 400000) {
+		I2C0_F = I2C_F_DIV640; // 112 kHz
+	} else if (frequency < 1000000) {
+		I2C0_F = I2C_F_DIV192; // 375 kHz
+	} else {
+		I2C0_F = I2C_F_DIV72; // 1.0 MHz
+	}
+	I2C0_FLT = 4;
+#elif F_BUS == 64000000
+	if (frequency < 400000) {
+		I2C0_F = I2C_F_DIV640; // 100 kHz
+	} else if (frequency < 1000000) {
+		I2C0_F = I2C_F_DIV160; // 400 kHz
+	} else {
+		I2C0_F = I2C_F_DIV64; // 1.0 MHz
+	}
+	I2C0_FLT = 4;
+#elif F_BUS == 60000000
 	if (frequency < 400000) {
 		I2C0_F = 0x2C;	// 104 kHz
 	} else if (frequency < 1000000) {
@@ -101,6 +165,15 @@ void TwoWire::setClock(uint32_t frequency)
 		I2C0_F = 0x1C; // 389 kHz
 	} else {
 		I2C0_F = 0x0E; // 1 MHz
+	}
+	I2C0_FLT = 4;
+#elif F_BUS == 54000000
+	if (frequency < 400000) {
+		I2C0_F = I2C_F_DIV512;	// 105 kHz
+	} else if (frequency < 1000000) {
+		I2C0_F = I2C_F_DIV128; // 422 kHz
+	} else {
+		I2C0_F = I2C_F_DIV56; // 0.96 MHz
 	}
 	I2C0_FLT = 4;
 #elif F_BUS == 48000000
@@ -166,7 +239,7 @@ void TwoWire::setClock(uint32_t frequency)
 	I2C0_F = 0x00; // 100 kHz
 	I2C0_FLT = 1;
 #else
-#error "F_BUS must be 60, 56, 48, 40, 36, 24, 16, 8, 4 or 2 MHz"
+#error "F_BUS must be 120, 108, 96, 9, 80, 72, 64, 60, 56, 54, 48, 40, 36, 24, 16, 8, 4 or 2 MHz"
 #endif
 }
 

@@ -91,7 +91,7 @@ void printKnownChips(byte address)
     case 0x01: Serial.print(F("AS3935")); break;
     case 0x02: Serial.print(F("AS3935")); break;
     case 0x03: Serial.print(F("AS3935")); break;
-    case 0x0A: Serial.print(F("SGTL5000")); break;
+    case 0x0A: Serial.print(F("SGTL5000")); break; // MCLK required
     case 0x0B: Serial.print(F("SMBusBattery?")); break;
     case 0x0C: Serial.print(F("AK8963")); break;
     case 0x10: Serial.print(F("CS4272")); break;
