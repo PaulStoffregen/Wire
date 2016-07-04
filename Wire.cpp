@@ -69,11 +69,23 @@ void TwoWire::begin(void)
 		CORE_PIN18_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
 	} else if (sda_pin_num == 17) {
 		CORE_PIN17_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+#if defined(__MK64FX512__) || defined(__MK66FX1M0__)
+	} else if (sda_pin_num == 34) {
+		CORE_PIN34_CONFIG = PORT_PCR_MUX(5)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+	} else if (sda_pin_num == 8) {
+		CORE_PIN8_CONFIG = PORT_PCR_MUX(7)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+#endif	
 	}
 	if (scl_pin_num == 19) {
 		CORE_PIN19_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
 	} else if (scl_pin_num == 16) {
 		CORE_PIN16_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+#if defined(__MK64FX512__) || defined(__MK66FX1M0__)
+	} else if (scl_pin_num == 33) {
+		CORE_PIN33_CONFIG = PORT_PCR_MUX(5)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+	} else if (scl_pin_num == 7) {
+		CORE_PIN7_CONFIG = PORT_PCR_MUX(7)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+#endif	
 	}
 	setClock(100000);
 	I2C0_C2 = I2C_C2_HDRS;
@@ -251,11 +263,24 @@ void TwoWire::setSDA(uint8_t pin)
 			CORE_PIN18_CONFIG = 0;
 		} else if (sda_pin_num == 17) {
 			CORE_PIN17_CONFIG = 0;
+#if defined(__MK64FX512__) || defined(__MK66FX1M0__)
+		} else if (sda_pin_num == 34) {
+			CORE_PIN34_CONFIG = 0;
+		} else if (sda_pin_num == 8) {
+			CORE_PIN8_CONFIG = 0;
+#endif	
 		}
+
 		if (pin == 18) {
 			CORE_PIN18_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
 		} else if (pin == 17) {
 			CORE_PIN17_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+#if defined(__MK64FX512__) || defined(__MK66FX1M0__)
+		} else if (pin == 34) {
+			CORE_PIN34_CONFIG = PORT_PCR_MUX(5)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+		} else if (pin == 8) {
+			CORE_PIN8_CONFIG = PORT_PCR_MUX(7)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+#endif	
 		}
 	}
 	sda_pin_num = pin;
@@ -269,11 +294,24 @@ void TwoWire::setSCL(uint8_t pin)
 			CORE_PIN19_CONFIG = 0;
 		} else if (scl_pin_num == 16) {
 			CORE_PIN16_CONFIG = 0;
+#if defined(__MK64FX512__) || defined(__MK66FX1M0__)
+		} else if (scl_pin_num == 33) {
+			CORE_PIN33_CONFIG = 0;
+		} else if (scl_pin_num == 7) {
+			CORE_PIN7_CONFIG = 0;
+#endif	
 		}
+
 		if (pin == 19) {
 			CORE_PIN19_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
 		} else if (pin == 16) {
 			CORE_PIN16_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+#if defined(__MK64FX512__) || defined(__MK66FX1M0__)
+		} else if (pin == 33) {
+			CORE_PIN33_CONFIG = PORT_PCR_MUX(5)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+		} else if (pin == 7) {
+			CORE_PIN7_CONFIG = PORT_PCR_MUX(7)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+#endif	
 		}
 	}
 	scl_pin_num = pin;
@@ -297,11 +335,23 @@ void TwoWire::end()
 		CORE_PIN18_CONFIG = 0;
 	} else if (sda_pin_num == 17) {
 		CORE_PIN17_CONFIG = 0;
+#if defined(__MK64FX512__) || defined(__MK66FX1M0__)
+	} else if (sda_pin_num == 34) {
+		CORE_PIN34_CONFIG = 0;
+	} else if (sda_pin_num == 8) {
+		CORE_PIN8_CONFIG = 0;
+#endif	
 	}
 	if (scl_pin_num == 19) {
 		CORE_PIN19_CONFIG = 0;
 	} else if (scl_pin_num == 16) {
 		CORE_PIN16_CONFIG = 0;
+#if defined(__MK64FX512__) || defined(__MK66FX1M0__)
+	} else if (scl_pin_num == 33) {
+		CORE_PIN33_CONFIG = 0;
+	} else if (scl_pin_num == 7) {
+		CORE_PIN7_CONFIG = 0;
+#endif	
 	}
 	SIM_SCGC4 &= ~SIM_SCGC4_I2C0; // TODO: use bitband
 }
