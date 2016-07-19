@@ -74,6 +74,8 @@ void TwoWire::begin(void)
 		CORE_PIN34_CONFIG = PORT_PCR_MUX(5)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
 	} else if (sda_pin_num == 8) {
 		CORE_PIN8_CONFIG = PORT_PCR_MUX(7)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+	} else if (sda_pin_num == 48) {
+		CORE_PIN48_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
 #endif	
 	}
 	if (scl_pin_num == 19) {
@@ -85,6 +87,8 @@ void TwoWire::begin(void)
 		CORE_PIN33_CONFIG = PORT_PCR_MUX(5)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
 	} else if (scl_pin_num == 7) {
 		CORE_PIN7_CONFIG = PORT_PCR_MUX(7)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+	} else if (scl_pin_num == 47) {
+		CORE_PIN47_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
 #endif	
 	}
 	setClock(100000);
@@ -268,6 +272,8 @@ void TwoWire::setSDA(uint8_t pin)
 			CORE_PIN34_CONFIG = 0;
 		} else if (sda_pin_num == 8) {
 			CORE_PIN8_CONFIG = 0;
+		} else if (sda_pin_num == 48) {
+			CORE_PIN48_CONFIG = 0;
 #endif	
 		}
 
@@ -280,6 +286,8 @@ void TwoWire::setSDA(uint8_t pin)
 			CORE_PIN34_CONFIG = PORT_PCR_MUX(5)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
 		} else if (pin == 8) {
 			CORE_PIN8_CONFIG = PORT_PCR_MUX(7)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+		} else if (pin == 48) {
+			CORE_PIN48_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
 #endif	
 		}
 	}
@@ -299,6 +307,8 @@ void TwoWire::setSCL(uint8_t pin)
 			CORE_PIN33_CONFIG = 0;
 		} else if (scl_pin_num == 7) {
 			CORE_PIN7_CONFIG = 0;
+		} else if (scl_pin_num == 47) {
+			CORE_PIN47_CONFIG = 0;
 #endif	
 		}
 
@@ -311,6 +321,8 @@ void TwoWire::setSCL(uint8_t pin)
 			CORE_PIN33_CONFIG = PORT_PCR_MUX(5)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
 		} else if (pin == 7) {
 			CORE_PIN7_CONFIG = PORT_PCR_MUX(7)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+		} else if (pin == 47) {
+			CORE_PIN47_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
 #endif	
 		}
 	}
@@ -340,6 +352,8 @@ void TwoWire::end()
 		CORE_PIN34_CONFIG = 0;
 	} else if (sda_pin_num == 8) {
 		CORE_PIN8_CONFIG = 0;
+	} else if (sda_pin_num == 48) {
+		CORE_PIN48_CONFIG = 0;
 #endif	
 	}
 	if (scl_pin_num == 19) {
@@ -351,6 +365,8 @@ void TwoWire::end()
 		CORE_PIN33_CONFIG = 0;
 	} else if (scl_pin_num == 7) {
 		CORE_PIN7_CONFIG = 0;
+	} else if (scl_pin_num == 47) {
+		CORE_PIN47_CONFIG = 0;
 #endif	
 	}
 	SIM_SCGC4 &= ~SIM_SCGC4_I2C0; // TODO: use bitband
