@@ -115,6 +115,10 @@ void printKnownChips(byte address)
     case 0x29: Serial.print(F("TSL2561,VL6180,TSL2561,TSL2591,BNO055,CAP1188")); break;
     case 0x2A: Serial.print(F("SGTL5000,CAP1188")); break;
     case 0x2B: Serial.print(F("CAP1188")); break;
+    case 0x2C: Serial.print(F("MCP44XX ePot")); break;
+    case 0x2D: Serial.print(F("MCP44XX ePot")); break;
+    case 0x2E: Serial.print(F("MCP44XX ePot")); break;
+    case 0x2F: Serial.print(F("MCP44XX ePot")); break;
     case 0x38: Serial.print(F("RA8875,FT6206")); break;
     case 0x39: Serial.print(F("TSL2561")); break;
     case 0x3C: Serial.print(F("SSD1306,DigisparkOLED")); break;
