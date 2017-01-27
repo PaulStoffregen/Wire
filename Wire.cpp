@@ -347,7 +347,7 @@ uint8_t TwoWire::isr(WIRE_STRUCT *pwires, KINETIS_I2C_t * kinetisk_pi2c)
 //  I2C1_C2      // I2C Control Register 2
 //  I2C1_FLT     // I2C Programmable Input Glitch Filter register
 
-uint8_t TwoWire::i2c_status(KINETIS_I2C_t  *kinetisk_pi2c)
+inline uint8_t TwoWire::i2c_status(KINETIS_I2C_t  *kinetisk_pi2c)
 {
 #if 0	
 	static uint32_t p=0xFFFF;

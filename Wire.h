@@ -80,7 +80,7 @@ class TwoWire: public Stream
     static uint8_t isr(WIRE_STRUCT *pwires,  KINETIS_I2C_t * kinetisk_pi2c);			// Process each of the ISRs...
 
     inline uint8_t i2c_status(KINETIS_I2C_t  *kinetisk_pi2c);
-	inline void i2c_wait(KINETIS_I2C_t  *kinetisk_pi2c);
+	void i2c_wait(KINETIS_I2C_t  *kinetisk_pi2c);
     void checkAndAllocateStruct(void);
   public:
     TwoWire();
