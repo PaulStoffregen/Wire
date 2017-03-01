@@ -103,7 +103,7 @@ void printKnownChips(byte address)
     case 0x1C: Serial.print(F("LIS3MDL")); break;
     case 0x1D: Serial.print(F("LSM303D,LSM9DS0,ADXL345,MMA7455L,LSM9DS1,LIS3DSH")); break;
     case 0x1E: Serial.print(F("LSM303D,HMC5883L,FXOS8700,LIS3DSH")); break;
-    case 0x20: Serial.print(F("MCP23017,MCP23008,PCF8574,FXAS21002")); break;
+    case 0x20: Serial.print(F("MCP23017,MCP23008,PCF8574,FXAS21002,SoilMoisture")); break;
     case 0x21: Serial.print(F("MCP23017,MCP23008,PCF8574")); break;
     case 0x22: Serial.print(F("MCP23017,MCP23008,PCF8574")); break;
     case 0x23: Serial.print(F("MCP23017,MCP23008,PCF8574")); break;
@@ -146,9 +146,11 @@ void printKnownChips(byte address)
     case 0x58: Serial.print(F("TPA2016,MAX21100")); break;
     case 0x5A: Serial.print(F("MPR121")); break;
     case 0x60: Serial.print(F("MPL3115,MCP4725,MCP4728,TEA5767,Si5351")); break;
-    case 0x61: Serial.print(F("MCP4725")); break;
-    case 0x62: Serial.print(F("LidarLite,MCP4725")); break;
-    case 0x63: Serial.print(F("MCP4725")); break;
+    case 0x61: Serial.print(F("MCP4725,AtlasEzoDO")); break;
+    case 0x62: Serial.print(F("LidarLite,MCP4725,AtlasEzoORP")); break;
+    case 0x63: Serial.print(F("MCP4725,AtlasEzoPH")); break;
+    case 0x64: Serial.print(F("AtlasEzoEC")); break;
+    case 0x66: Serial.print(F("AtlasEzoRTD")); break;
     case 0x68: Serial.print(F("DS1307,DS3231,MPU6050,MPU9050,MPU9250,ITG3200,ITG3701,LSM9DS0,L3G4200D")); break;
     case 0x69: Serial.print(F("MPU6050,MPU9050,MPU9250,ITG3701,L3G4200D")); break;
     case 0x6A: Serial.print(F("LSM9DS1")); break;
