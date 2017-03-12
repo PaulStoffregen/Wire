@@ -47,8 +47,8 @@
 #undef I2C0_SLTH
 #undef I2C0_SLTL
 
-void sda_rising_isr(void);
-
+void sda_rising_isr0(void);
+void sda_rising_isr1(void);
 
 void TwoWire::begin(void)
 {
@@ -392,7 +392,7 @@ void TwoWire::isr(void)
 		port.S = I2C_S_IICIF;
 		return;
 	}
-	#if defined(KINETISL)
+	#if defined(WIRE_HAS_STOP_INTERRUPT)
 	c1 = port.FLT;
 	if ((c1 & I2C_FLT_STOPF) && (c1 & I2C_FLT_STOPIE)) {
 		port.FLT = c1 & ~I2C_FLT_STOPIE;
@@ -424,11 +424,21 @@ void TwoWire::isr(void)
 	} else {
 		// Continue Slave Receive
 		irqcount = 0;
-		#if defined(KINETISK)
-		attachInterrupt(hardware.sda_pin[sda_pin_index], sda_rising_isr, RISING);
-		#elif defined(KINETISL)
+		#ifdef WIRE_HAS_STOP_INTERRUPT
 		port.FLT |= I2C_FLT_STOPIE;
+		#else
+		#if defined(WIRE_IMPLEMENT_WIRE) && !defined(WIRE_IMPLEMENT_WIRE1)
+		attachInterrupt(hardware.sda_pin[sda_pin_index], sda_rising_isr0, RISING);
+		#elif !defined(WIRE_IMPLEMENT_WIRE) && defined(WIRE_IMPLEMENT_WIRE1)
+		attachInterrupt(hardware.sda_pin[sda_pin_index], sda_rising_isr1, RISING);
+		#elif defined(WIRE_IMPLEMENT_WIRE) && defined(WIRE_IMPLEMENT_WIRE1)
+		if (this == &Wire) {
+			attachInterrupt(hardware.sda_pin[sda_pin_index], sda_rising_isr0, RISING);
+		} else if (this == &Wire1) {
+			attachInterrupt(hardware.sda_pin[sda_pin_index], sda_rising_isr1, RISING);
+		}
 		#endif
+		#endif // WIRE_HAS_STOP_INTERRUPT
 		//digitalWriteFast(4, HIGH);
 		data = port.D;
 		//serial_phex(data);
@@ -440,26 +450,43 @@ void TwoWire::isr(void)
 	port.S = I2C_S_IICIF;
 }
 
+
 // Detects the stop condition that terminates a slave receive transfer.
-// Sadly, the I2C in Kinetis K series lacks the stop detect interrupt
+// Sadly, the I2C in older Kinetis K series lacks the stop detect interrupt
 // This pin change interrupt hack is needed to detect the stop condition
-void sda_rising_isr(void)
+#if !defined(WIRE_HAS_STOP_INTERRUPT)
+
+#if defined(WIRE_IMPLEMENT_WIRE)
+void sda_rising_isr0(void)
+{
+	Wire.sda_rising_isr();
+}
+#endif
+#if defined(WIRE_IMPLEMENT_WIRE1)
+void sda_rising_isr1(void)
+{
+	Wire1.sda_rising_isr();
+}
+#endif
+
+void TwoWire::sda_rising_isr(void)
 {
 	//digitalWrite(3, HIGH);
-	if (!(Wire.port.S & I2C_S_BUSY)) {
-		detachInterrupt(Wire.hardware.sda_pin[Wire.sda_pin_index]);
-		if (Wire.user_onReceive != NULL) {
-			Wire.rxBufferIndex = 0;
-			Wire.user_onReceive(Wire.rxBufferLength);
+	if (!(port.S & I2C_S_BUSY)) {
+		detachInterrupt(hardware.sda_pin[sda_pin_index]);
+		if (user_onReceive != NULL) {
+			rxBufferIndex = 0;
+			user_onReceive(rxBufferLength);
 		}
 		//delayMicroseconds(100);
 	} else {
-		if (++Wire.irqcount >= 2 || !Wire.slave_mode) {
-			detachInterrupt(Wire.hardware.sda_pin[Wire.sda_pin_index]);
+		if (++irqcount >= 2 || !slave_mode) {
+			detachInterrupt(hardware.sda_pin[sda_pin_index]);
 		}
 	}
 	//digitalWrite(3, LOW);
 }
+#endif // !WIRE_HAS_STOP_INTERRUPT
 
 
 // Chapter 44: Inter-Integrated Circuit (I2C) - Page 1012
@@ -711,6 +738,8 @@ const TwoWire::I2C_Hardware_t TwoWire::i2c2_hardware = {
 	IRQ_I2C2
 };
 
+TwoWire Wire2(KINETIS_I2C2, TwoWire::i2c2_hardware);
+
 #endif // WIRE_IMPLEMENT_WIRE2
 
 
@@ -726,6 +755,8 @@ const TwoWire::I2C_Hardware_t TwoWire::i2c3_hardware = {
 #endif
 	IRQ_I2C3
 };
+
+TwoWire Wire3(KINETIS_I2C3, TwoWire::i2c3_hardware);
 
 #endif // WIRE_IMPLEMENT_WIRE3
 

@@ -29,8 +29,6 @@
 
 #if defined(__arm__) && defined(TEENSYDUINO)
 
-extern "C" void i2c0_isr(void);
-
 #include <inttypes.h>
 #include "Arduino.h"
 
@@ -205,12 +203,13 @@ private:
 	void onReceiveService(uint8_t*, int);
 	void (*user_onRequest)(void);
 	void (*user_onReceive)(int);
-	//void sda_rising_isr(void);
+	void sda_rising_isr(void);
 	friend void i2c0_isr(void);
 	friend void i2c1_isr(void);
 	friend void i2c2_isr(void);
 	friend void i2c3_isr(void);
-	friend void sda_rising_isr(void);
+	friend void sda_rising_isr0(void);
+	friend void sda_rising_isr1(void);
 };
 
 #ifdef WIRE_IMPLEMENT_WIRE
