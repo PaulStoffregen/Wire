@@ -12,7 +12,7 @@
 
 #include <Wire.h>
 
-int led = BUILTIN_LED;
+int led = LED_BUILTIN;
 
 void setup()
 {
