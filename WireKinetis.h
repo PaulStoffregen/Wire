@@ -46,10 +46,19 @@ public:
 	typedef struct {
 		volatile uint32_t &clock_gate_register;
 		uint32_t clock_gate_mask;
+		uint8_t  sda_pin[5];
+		uint8_t  sda_mux[5];
+		uint8_t  scl_pin[5];
+		uint8_t  scl_mux[5];
 	} I2C_Hardware_t;
 	static const I2C_Hardware_t i2c0_hardware;
+	static const I2C_Hardware_t i2c1_hardware;
+	static const I2C_Hardware_t i2c2_hardware;
+	static const I2C_Hardware_t i2c3_hardware;
 public:
-	TwoWire(KINETIS_I2C_t &myport, const I2C_Hardware_t &myhardware);
+	TwoWire(KINETIS_I2C_t &myport, const I2C_Hardware_t &myhardware)
+		: port(myport), hardware(myhardware), sda_pin_index(0), scl_pin_index(0) {
+	}
 	void begin();
 	void begin(uint8_t address);
 	void begin(int address) {
@@ -142,6 +151,7 @@ private:
 		while (!(port.S & I2C_S_IICIF)) ; // wait (TODO: timeout)
 		port.S = I2C_S_IICIF;
 	}
+	void isr(void);
 	KINETIS_I2C_t &port;
 	const I2C_Hardware_t &hardware;
 	uint8_t rxBuffer[BUFFER_LENGTH];
@@ -154,13 +164,13 @@ private:
 	uint8_t transmitting;
 	uint8_t slave_mode;
 	uint8_t irqcount;
+	uint8_t sda_pin_index;
+	uint8_t scl_pin_index;
 	void onRequestService(void);
 	void onReceiveService(uint8_t*, int);
 	void (*user_onRequest)(void);
 	void (*user_onReceive)(int);
 	void sda_rising_isr(void);
-	uint8_t sda_pin_num;
-	uint8_t scl_pin_num;
 	friend void i2c0_isr(void);
 	friend void sda_rising_isr(void);
 };

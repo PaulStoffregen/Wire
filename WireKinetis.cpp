@@ -44,25 +44,19 @@
 
 void sda_rising_isr(void);
 
-TwoWire::TwoWire(KINETIS_I2C_t &myport, const I2C_Hardware_t &myhardware)
-	: port(myport), hardware(myhardware)
-{
-	rxBufferIndex = 0;
-	rxBufferLength = 0;
-	txBufferIndex = 0;
-	txBufferLength = 0;
-	transmitting = 0;
-	sda_pin_num = 18;
-	scl_pin_num = 19;
-	user_onRequest = NULL;
-	user_onReceive = NULL;
-}
 
 void TwoWire::begin(void)
 {
 	//serial_begin(BAUD2DIV(115200));
 	//serial_print("\nWire Begin\n");
 
+	rxBufferIndex = 0;
+	rxBufferLength = 0;
+	txBufferIndex = 0;
+	txBufferLength = 0;
+	transmitting = 0;
+	user_onRequest = NULL;
+	user_onReceive = NULL;
 	slave_mode = 0;
 	hardware.clock_gate_register |= hardware.clock_gate_mask;
 	port.C1 = 0;
@@ -73,32 +67,14 @@ void TwoWire::begin(void)
 	// would enable pullup resistors.  However, there seems
 	// to be a bug in chip while I2C is enabled, where setting
 	// those causes the port to be driven strongly high.
-	if (sda_pin_num == 18) {
-		CORE_PIN18_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
-	} else if (sda_pin_num == 17) {
-		CORE_PIN17_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
-#if defined(__MK64FX512__) || defined(__MK66FX1M0__)
-	} else if (sda_pin_num == 34) {
-		CORE_PIN34_CONFIG = PORT_PCR_MUX(5)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
-	} else if (sda_pin_num == 8) {
-		CORE_PIN8_CONFIG = PORT_PCR_MUX(7)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
-	} else if (sda_pin_num == 48) {
-		CORE_PIN48_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
-#endif	
-	}
-	if (scl_pin_num == 19) {
-		CORE_PIN19_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
-	} else if (scl_pin_num == 16) {
-		CORE_PIN16_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
-#if defined(__MK64FX512__) || defined(__MK66FX1M0__)
-	} else if (scl_pin_num == 33) {
-		CORE_PIN33_CONFIG = PORT_PCR_MUX(5)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
-	} else if (scl_pin_num == 7) {
-		CORE_PIN7_CONFIG = PORT_PCR_MUX(7)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
-	} else if (scl_pin_num == 47) {
-		CORE_PIN47_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
-#endif	
-	}
+	uint32_t mux;
+	volatile uint32_t *reg;
+	reg = portConfigRegister(hardware.sda_pin[sda_pin_index]);
+	mux = PORT_PCR_MUX(hardware.sda_mux[sda_pin_index]);
+	*reg = mux|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+	reg = portConfigRegister(hardware.scl_pin[scl_pin_index]);
+	mux = PORT_PCR_MUX(hardware.scl_mux[scl_pin_index]);
+	*reg = mux|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
 	setClock(100000);
 	port.C2 = I2C_C2_HDRS;
 	port.C1 = I2C_C1_IICEN;
@@ -269,72 +245,44 @@ void TwoWire::setClock(uint32_t frequency)
 
 void TwoWire::setSDA(uint8_t pin)
 {
-	if (pin == sda_pin_num) return;
-	if ((hardware.clock_gate_register & hardware.clock_gate_mask)) {
-		if (sda_pin_num == 18) {
-			CORE_PIN18_CONFIG = 0;
-		} else if (sda_pin_num == 17) {
-			CORE_PIN17_CONFIG = 0;
-#if defined(__MK64FX512__) || defined(__MK66FX1M0__)
-		} else if (sda_pin_num == 34) {
-			CORE_PIN34_CONFIG = 0;
-		} else if (sda_pin_num == 8) {
-			CORE_PIN8_CONFIG = 0;
-		} else if (sda_pin_num == 48) {
-			CORE_PIN48_CONFIG = 0;
-#endif	
-		}
-
-		if (pin == 18) {
-			CORE_PIN18_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
-		} else if (pin == 17) {
-			CORE_PIN17_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
-#if defined(__MK64FX512__) || defined(__MK66FX1M0__)
-		} else if (pin == 34) {
-			CORE_PIN34_CONFIG = PORT_PCR_MUX(5)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
-		} else if (pin == 8) {
-			CORE_PIN8_CONFIG = PORT_PCR_MUX(7)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
-		} else if (pin == 48) {
-			CORE_PIN48_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
-#endif	
-		}
+	if (pin == hardware.sda_pin[sda_pin_index]) return;
+	uint32_t newindex=0;
+	while (1) {
+		uint32_t sda_pin = hardware.sda_pin[newindex];
+		if (sda_pin == 255) return;
+		if (sda_pin == pin) break;
+		if (++newindex >= sizeof(hardware.sda_pin)) return;
 	}
-	sda_pin_num = pin;
+	if ((hardware.clock_gate_register & hardware.clock_gate_mask)) {
+		volatile uint32_t *reg;
+		reg = portConfigRegister(hardware.sda_pin[sda_pin_index]);
+		*reg = 0;
+		reg = portConfigRegister(hardware.sda_pin[newindex]);
+		uint32_t mux = PORT_PCR_MUX(hardware.sda_mux[newindex]);
+		*reg = mux|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+	}
+	sda_pin_index = newindex;
 }
 
 void TwoWire::setSCL(uint8_t pin)
 {
-	if (pin == scl_pin_num) return;
-	if ((hardware.clock_gate_register & hardware.clock_gate_mask)) {
-		if (scl_pin_num == 19) {
-			CORE_PIN19_CONFIG = 0;
-		} else if (scl_pin_num == 16) {
-			CORE_PIN16_CONFIG = 0;
-#if defined(__MK64FX512__) || defined(__MK66FX1M0__)
-		} else if (scl_pin_num == 33) {
-			CORE_PIN33_CONFIG = 0;
-		} else if (scl_pin_num == 7) {
-			CORE_PIN7_CONFIG = 0;
-		} else if (scl_pin_num == 47) {
-			CORE_PIN47_CONFIG = 0;
-#endif	
-		}
-
-		if (pin == 19) {
-			CORE_PIN19_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
-		} else if (pin == 16) {
-			CORE_PIN16_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
-#if defined(__MK64FX512__) || defined(__MK66FX1M0__)
-		} else if (pin == 33) {
-			CORE_PIN33_CONFIG = PORT_PCR_MUX(5)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
-		} else if (pin == 7) {
-			CORE_PIN7_CONFIG = PORT_PCR_MUX(7)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
-		} else if (pin == 47) {
-			CORE_PIN47_CONFIG = PORT_PCR_MUX(2)|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
-#endif	
-		}
+	if (pin == hardware.scl_pin[scl_pin_index]) return;
+	uint32_t newindex=0;
+	while (1) {
+		uint32_t scl_pin = hardware.scl_pin[newindex];
+		if (scl_pin == 255) return;
+		if (scl_pin == pin) break;
+		if (++newindex >= sizeof(hardware.scl_pin)) return;
 	}
-	scl_pin_num = pin;
+	if ((hardware.clock_gate_register & hardware.clock_gate_mask)) {
+		volatile uint32_t *reg;
+		reg = portConfigRegister(hardware.scl_pin[scl_pin_index]);
+		*reg = 0;
+		reg = portConfigRegister(hardware.scl_pin[newindex]);
+		uint32_t mux = PORT_PCR_MUX(hardware.scl_mux[newindex]);
+		*reg = mux|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+	}
+	scl_pin_index = newindex;
 }
 
 void TwoWire::begin(uint8_t address)
@@ -350,33 +298,13 @@ void TwoWire::end()
 {
 	if (!(hardware.clock_gate_register & hardware.clock_gate_mask)) return;
 	NVIC_DISABLE_IRQ(IRQ_I2C0);
+	// TODO: should this try to create a stop condition??
 	port.C1 = 0;
-	if (sda_pin_num == 18) {
-		CORE_PIN18_CONFIG = 0;
-	} else if (sda_pin_num == 17) {
-		CORE_PIN17_CONFIG = 0;
-#if defined(__MK64FX512__) || defined(__MK66FX1M0__)
-	} else if (sda_pin_num == 34) {
-		CORE_PIN34_CONFIG = 0;
-	} else if (sda_pin_num == 8) {
-		CORE_PIN8_CONFIG = 0;
-	} else if (sda_pin_num == 48) {
-		CORE_PIN48_CONFIG = 0;
-#endif	
-	}
-	if (scl_pin_num == 19) {
-		CORE_PIN19_CONFIG = 0;
-	} else if (scl_pin_num == 16) {
-		CORE_PIN16_CONFIG = 0;
-#if defined(__MK64FX512__) || defined(__MK66FX1M0__)
-	} else if (scl_pin_num == 33) {
-		CORE_PIN33_CONFIG = 0;
-	} else if (scl_pin_num == 7) {
-		CORE_PIN7_CONFIG = 0;
-	} else if (scl_pin_num == 47) {
-		CORE_PIN47_CONFIG = 0;
-#endif	
-	}
+	volatile uint32_t *reg;
+	reg = portConfigRegister(hardware.scl_pin[scl_pin_index]);
+	*reg = 0;
+	reg = portConfigRegister(hardware.sda_pin[sda_pin_index]);
+	*reg = 0;
 	hardware.clock_gate_register &= ~hardware.clock_gate_mask;
 }
 
@@ -686,14 +614,79 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 }
 
 
-
-
 const TwoWire::I2C_Hardware_t TwoWire::i2c0_hardware = {
-	SIM_SCGC4, SIM_SCGC4_I2C0
+	SIM_SCGC4, SIM_SCGC4_I2C0,
+#if defined(__MKL26Z64__) || defined(__MK20DX128__) || defined(__MK20DX256__)
+	18, 17, 255, 255, 255,
+	2, 2, 0, 0, 0,
+	19, 16, 255, 255, 255,
+	2, 2, 0, 0, 0,
+#elif defined(__MK64FX512__) || defined(__MK66FX1M0__)
+	18, 17, 34, 8, 48,
+	2, 2, 5, 7, 2,
+	19, 16, 33, 7, 47,
+	2, 2, 5, 7, 2,
+#endif
+};
+
+const TwoWire::I2C_Hardware_t TwoWire::i2c1_hardware = {
+	SIM_SCGC4, SIM_SCGC4_I2C1,
+#if defined(__MKL26Z64__)
+	23, 255, 255, 255, 255,
+	2, 0, 0, 0, 0,
+	22, 255, 255, 255, 255,
+	2, 0, 0, 0, 0,
+#elif defined(__MK20DX256__)
+	30, 255, 255, 255, 255,
+	2, 0, 0, 0, 0,
+	29, 255, 255, 255, 255,
+	2, 0, 0, 0, 0,
+#elif defined(__MK64FX512__) || defined(__MK66FX1M0__)
+	38, 255, 255, 255, 255,
+	2, 0, 0, 0, 0,
+	37, 255, 255, 255, 255,
+	2, 0, 0, 0, 0,
+#else
+	255, 255, 255, 255, 255,
+	0, 0, 0, 0, 0,
+	255, 255, 255, 255, 255,
+	0, 0, 0, 0, 0,
+#endif
+};
+
+const TwoWire::I2C_Hardware_t TwoWire::i2c2_hardware = {
+	SIM_SCGC1, SIM_SCGC1_I2C2,
+#if defined(__MK64FX512__) || defined(__MK66FX1M0__)
+	4, 255, 255, 255, 255,
+	5, 0, 0, 0, 0,
+	3, 26, 255, 255, 255,
+	5, 5, 0, 0, 0,
+#else
+	255, 255, 255, 255, 255,
+	0, 0, 0, 0, 0,
+	255, 255, 255, 255, 255,
+	0, 0, 0, 0, 0,
+#endif
+};
+
+const TwoWire::I2C_Hardware_t TwoWire::i2c3_hardware = {
+	SIM_SCGC1, SIM_SCGC1_I2C3,
+#if defined(__MK66FX1M0__)
+	56, 255, 255, 255, 255,
+	2, 0, 0, 0, 0,
+	57, 255, 255, 255, 255,
+	2, 0, 0, 0, 0,
+#else
+	255, 255, 255, 255, 255,
+	0, 0, 0, 0, 0,
+	255, 255, 255, 255, 255,
+	0, 0, 0, 0, 0,
+#endif
 };
 
 
 TwoWire Wire(KINETIS_I2C0, TwoWire::i2c0_hardware);
+TwoWire Wire1(KINETIS_I2C1, TwoWire::i2c1_hardware);
 
 
 
