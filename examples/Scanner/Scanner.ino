@@ -32,6 +32,9 @@
 
 
 void setup() {
+  // uncomment these to use alternate pins
+  //Wire.setSCL(16);
+  //Wire.setSDA(17);
   Wire.begin();
   Serial.begin(9600);
   while (!Serial);        // Leonardo: wait for serial monitor

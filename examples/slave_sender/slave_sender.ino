@@ -12,8 +12,11 @@
 
 #include <Wire.h>
 
+int led = BUILTIN_LED;
+
 void setup()
 {
+  pinMode(led, OUTPUT);
   Wire.begin(8);                // join i2c bus with address #8
   Wire.onRequest(requestEvent); // register event
 }
@@ -27,6 +30,8 @@ void loop()
 // this function is registered as an event, see setup()
 void requestEvent()
 {
-  Wire.write("hello "); // respond with message of 6 bytes
-                       // as expected by master
+  digitalWrite(led, HIGH);  // briefly flash the LED
+  Wire.write("hello ");     // respond with message of 6 bytes
+                            // as expected by master
+  digitalWrite(led, LOW);
 }
