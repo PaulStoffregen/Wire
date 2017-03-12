@@ -49,25 +49,53 @@ public:
 		begin((uint8_t)address);
 	}
 	void end();
-	void setClock(uint32_t);
-	void setSDA(uint8_t);
-	void setSCL(uint8_t);
-	void beginTransmission(uint8_t);
-	void beginTransmission(int);
-	uint8_t endTransmission(void);
-	uint8_t endTransmission(uint8_t);
-	uint8_t requestFrom(uint8_t, uint8_t);
-	uint8_t requestFrom(uint8_t, uint8_t, uint8_t);
-	uint8_t requestFrom(int, int);
-	uint8_t requestFrom(int, int, int);
-	virtual size_t write(uint8_t);
-	virtual size_t write(const uint8_t *, size_t);
-	virtual int available(void);
-	virtual int read(void);
-	virtual int peek(void);
-	virtual void flush(void);
-	void onReceive(void (*function)(int));
-	void onRequest(void (*function)(void));
+	void setClock(uint32_t frequency);
+	void setSDA(uint8_t pin);
+	void setSCL(uint8_t pin);
+	void beginTransmission(uint8_t address) {
+		txBuffer[0] = (address << 1);
+		transmitting = 1;
+		txBufferLength = 1;
+	}
+	void beginTransmission(int address) {
+		beginTransmission((uint8_t)address);
+	}
+	uint8_t endTransmission(uint8_t sendStop);
+	uint8_t endTransmission(void) {
+		return endTransmission(1);
+	}
+	uint8_t requestFrom(uint8_t address, uint8_t quantity, uint8_t sendStop);
+	uint8_t requestFrom(uint8_t address, uint8_t quantity) {
+		return requestFrom(address, quantity, (uint8_t)1);
+	}
+	uint8_t requestFrom(int address, int quantity, int sendStop) {
+		return requestFrom((uint8_t)address, (uint8_t)quantity,
+			(uint8_t)(sendStop ? 1 : 0));
+	}
+	uint8_t requestFrom(int address, int quantity) {
+		return requestFrom((uint8_t)address, (uint8_t)quantity, (uint8_t)1);
+	}
+	virtual size_t write(uint8_t data);
+	virtual size_t write(const uint8_t *data, size_t quantity);
+	virtual int available(void) {
+		return rxBufferLength - rxBufferIndex;
+	}
+	virtual int read(void) {
+		if (rxBufferIndex >= rxBufferLength) return -1;
+		return rxBuffer[rxBufferIndex++];
+	}
+	virtual int peek(void) {
+		if (rxBufferIndex >= rxBufferLength) return -1;
+		return rxBuffer[rxBufferIndex];
+	}
+	virtual void flush(void) {
+	}
+	void onReceive(void (*function)(int numBytes)) {
+		user_onReceive = function;
+	}
+	void onRequest(void (*function)(void)) {
+		user_onRequest = function;
+	}
 	// send() for compatibility with very old sketches and libraries
 	void send(uint8_t b) {
 		write(b);

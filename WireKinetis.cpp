@@ -21,7 +21,7 @@
 
 #include "Wire.h"
 
-#if defined(__arm__) && defined(CORE_TEENSY)
+#if defined(__arm__) && defined(TEENSYDUINO)
 
 #include "kinetis.h"
 #include <string.h> // for memcpy
@@ -518,13 +518,6 @@ static void i2c_wait(void)
 	I2C0_S = I2C_S_IICIF;
 }
 
-void TwoWire::beginTransmission(uint8_t address)
-{
-	txBuffer[0] = (address << 1);
-	transmitting = 1;
-	txBufferLength = 1;
-}
-
 size_t TwoWire::write(uint8_t data)
 {
 	if (transmitting || slave_mode) {
@@ -551,10 +544,6 @@ size_t TwoWire::write(const uint8_t *data, size_t quantity)
 		return quantity;
 	}
 	return 0;
-}
-
-void TwoWire::flush(void)
-{
 }
 
 
@@ -705,67 +694,10 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 	return count;
 }
 
-int TwoWire::available(void)
-{
-	return rxBufferLength - rxBufferIndex;
-}
-
-int TwoWire::read(void)
-{
-	if (rxBufferIndex >= rxBufferLength) return -1;
-	return rxBuffer[rxBufferIndex++];
-}
-
-int TwoWire::peek(void)
-{
-	if (rxBufferIndex >= rxBufferLength) return -1;
-	return rxBuffer[rxBufferIndex];
-}
 
 
-
-
-
-// alternate function prototypes
-
-uint8_t TwoWire::requestFrom(uint8_t address, uint8_t quantity)
-{
-  return requestFrom((uint8_t)address, (uint8_t)quantity, (uint8_t)true);
-}
-
-uint8_t TwoWire::requestFrom(int address, int quantity)
-{
-  return requestFrom((uint8_t)address, (uint8_t)quantity, (uint8_t)true);
-}
-
-uint8_t TwoWire::requestFrom(int address, int quantity, int sendStop)
-{
-  return requestFrom((uint8_t)address, (uint8_t)quantity, (uint8_t)sendStop);
-}
-
-void TwoWire::beginTransmission(int address)
-{
-	beginTransmission((uint8_t)address);
-}
-
-uint8_t TwoWire::endTransmission(void)
-{
-	return endTransmission(true);
-}
-
-void TwoWire::onReceive( void (*function)(int) )
-{
-	user_onReceive = function;
-}
-
-void TwoWire::onRequest( void (*function)(void) )
-{
-	user_onRequest = function;
-}
-
-//TwoWire Wire = TwoWire();
 TwoWire Wire;
 
 
-#endif // __MK20DX128__ || __MK20DX256__
 
+#endif // __arm__ && TEENSYDUINO
