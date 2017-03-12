@@ -42,7 +42,7 @@ extern "C" void i2c0_isr(void);
 class TwoWire : public Stream
 {
 public:
-	TwoWire();
+	TwoWire(KINETIS_I2C_t &myport);
 	void begin();
 	void begin(uint8_t address);
 	void begin(int address) {
@@ -128,6 +128,14 @@ public:
 	}
 	using Print::write;
 private:
+	uint8_t i2c_status(void) {
+		return port.S;
+	}
+	void i2c_wait(void) {
+		while (!(port.S & I2C_S_IICIF)) ; // wait (TODO: timeout)
+		port.S = I2C_S_IICIF;
+	}
+	KINETIS_I2C_t &port;
 	uint8_t rxBuffer[BUFFER_LENGTH];
 	uint8_t rxBufferIndex;
 	uint8_t rxBufferLength;
