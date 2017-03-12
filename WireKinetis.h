@@ -37,12 +37,41 @@ extern "C" void i2c0_isr(void);
 #define BUFFER_LENGTH 32
 #define WIRE_HAS_END 1
 
+
+// Teensy LC
 #if defined(__MKL26Z64__)
-#define WIRE_HAS_STOP_INTERRUPT 1
-#elif defined(__MK64FX512__) || defined(__MK66FX1M0__)
-#define WIRE_HAS_START_INTERRUPT 1
-#define WIRE_HAS_STOP_INTERRUPT 1
+#define WIRE_IMPLEMENT_WIRE
+#define WIRE_IMPLEMENT_WIRE1
+#define WIRE_HAS_STOP_INTERRUPT
+
+// Teensy 3.0
+#elif defined(__MK20DX128__)
+#define WIRE_IMPLEMENT_WIRE
+
+// Teensy 3.1 & 3.2
+#elif defined(__MK20DX256__)
+#define WIRE_IMPLEMENT_WIRE
+#define WIRE_IMPLEMENT_WIRE1
+
+// Teensy 3.5
+#elif defined(__MK64FX512__)
+#define WIRE_IMPLEMENT_WIRE
+#define WIRE_IMPLEMENT_WIRE1
+#define WIRE_IMPLEMENT_WIRE2
+#define WIRE_HAS_START_INTERRUPT
+#define WIRE_HAS_STOP_INTERRUPT
+
+// Teensy 3.6
+#elif defined(__MK66FX1M0__)
+#define WIRE_IMPLEMENT_WIRE
+#define WIRE_IMPLEMENT_WIRE1
+#define WIRE_IMPLEMENT_WIRE2
+#define WIRE_IMPLEMENT_WIRE3
+#define WIRE_HAS_START_INTERRUPT
+#define WIRE_HAS_STOP_INTERRUPT
+
 #endif
+
 
 class TwoWire : public Stream
 {
@@ -175,7 +204,7 @@ private:
 	void onReceiveService(uint8_t*, int);
 	void (*user_onRequest)(void);
 	void (*user_onReceive)(int);
-	void sda_rising_isr(void);
+	//void sda_rising_isr(void);
 	friend void i2c0_isr(void);
 	friend void sda_rising_isr(void);
 };

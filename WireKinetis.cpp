@@ -315,16 +315,21 @@ void TwoWire::end()
 
 void i2c0_isr(void)
 {
+	Wire.isr();
+}
+
+void TwoWire::isr(void)
+{
 	uint8_t status, c1, data;
 	static uint8_t receiving=0;
 
-	status = Wire.port.S;
+	status = port.S;
 	//serial_print(".");
 	if (status & I2C_S_ARBL) {
 		// Arbitration Lost
-		Wire.port.S = I2C_S_ARBL;
+		port.S = I2C_S_ARBL;
 		//serial_print("a");
-		if (receiving && Wire.rxBufferLength > 0) {
+		if (receiving && rxBufferLength > 0) {
 			// TODO: does this detect the STOP condition in slave receive mode?
 
 
@@ -338,77 +343,77 @@ void i2c0_isr(void)
 			//serial_print("T");
 			// Begin Slave Transmit
 			receiving = 0;
-			Wire.txBufferLength = 0;
-			if (Wire.user_onRequest != NULL) {
-				Wire.user_onRequest();
+			txBufferLength = 0;
+			if (user_onRequest != NULL) {
+				user_onRequest();
 			}
-			if (Wire.txBufferLength == 0) {
+			if (txBufferLength == 0) {
 				// is this correct, transmitting a single zero
 				// when we should send nothing?  Arduino's AVR
 				// implementation does this, but is it ok?
-				Wire.txBufferLength = 1;
-				Wire.txBuffer[0] = 0;
+				txBufferLength = 1;
+				txBuffer[0] = 0;
 			}
-			Wire.port.C1 = I2C_C1_IICEN | I2C_C1_IICIE | I2C_C1_TX;
-			Wire.port.D = Wire.txBuffer[0];
-			Wire.txBufferIndex = 1;
+			port.C1 = I2C_C1_IICEN | I2C_C1_IICIE | I2C_C1_TX;
+			port.D = txBuffer[0];
+			txBufferIndex = 1;
 		} else {
 			// Begin Slave Receive
 			//serial_print("R");
 			receiving = 1;
-			Wire.rxBufferLength = 0;
-			Wire.port.C1 = I2C_C1_IICEN | I2C_C1_IICIE;
-			data = Wire.port.D;
+			rxBufferLength = 0;
+			port.C1 = I2C_C1_IICEN | I2C_C1_IICIE;
+			data = port.D;
 		}
-		Wire.port.S = I2C_S_IICIF;
+		port.S = I2C_S_IICIF;
 		return;
 	}
 	#if defined(KINETISL)
-	c1 = Wire.port.FLT;
+	c1 = port.FLT;
 	if ((c1 & I2C_FLT_STOPF) && (c1 & I2C_FLT_STOPIE)) {
-		Wire.port.FLT = c1 & ~I2C_FLT_STOPIE;
-		if (Wire.user_onReceive != NULL) {
-			Wire.rxBufferIndex = 0;
-			Wire.user_onReceive(Wire.rxBufferLength);
+		port.FLT = c1 & ~I2C_FLT_STOPIE;
+		if (user_onReceive != NULL) {
+			rxBufferIndex = 0;
+			user_onReceive(rxBufferLength);
 		}
 	}
 	#endif
-	c1 = Wire.port.C1;
+	c1 = port.C1;
 	if (c1 & I2C_C1_TX) {
 		// Continue Slave Transmit
 		//serial_print("t");
 		if ((status & I2C_S_RXAK) == 0) {
 			//serial_print(".");
 			// Master ACK'd previous byte
-			if (Wire.txBufferIndex < Wire.txBufferLength) {
-				Wire.port.D = Wire.txBuffer[Wire.txBufferIndex++];
+			if (txBufferIndex < txBufferLength) {
+				port.D = txBuffer[txBufferIndex++];
 			} else {
-				Wire.port.D = 0;
+				port.D = 0;
 			}
-			Wire.port.C1 = I2C_C1_IICEN | I2C_C1_IICIE | I2C_C1_TX;
+			port.C1 = I2C_C1_IICEN | I2C_C1_IICIE | I2C_C1_TX;
 		} else {
 			//serial_print("*");
 			// Master did not ACK previous byte
-			Wire.port.C1 = I2C_C1_IICEN | I2C_C1_IICIE;
-			data = Wire.port.D;
+			port.C1 = I2C_C1_IICEN | I2C_C1_IICIE;
+			data = port.D;
 		}
 	} else {
 		// Continue Slave Receive
-		Wire.irqcount = 0;
+		irqcount = 0;
 		#if defined(KINETISK)
-		attachInterrupt(18, sda_rising_isr, RISING);
+		attachInterrupt(hardware.sda_pin[sda_pin_index], sda_rising_isr, RISING);
 		#elif defined(KINETISL)
-		Wire.port.FLT |= I2C_FLT_STOPIE;
+		port.FLT |= I2C_FLT_STOPIE;
 		#endif
 		//digitalWriteFast(4, HIGH);
-		data = Wire.port.D;
+		data = port.D;
 		//serial_phex(data);
-		if (Wire.rxBufferLength < BUFFER_LENGTH && receiving) {
-			Wire.rxBuffer[Wire.rxBufferLength++] = data;
+		if (rxBufferLength < BUFFER_LENGTH && receiving) {
+			rxBuffer[rxBufferLength++] = data;
 		}
 		//digitalWriteFast(4, LOW);
 	}
-	Wire.port.S = I2C_S_IICIF;
+	port.S = I2C_S_IICIF;
 }
 
 // Detects the stop condition that terminates a slave receive transfer.
@@ -418,7 +423,7 @@ void sda_rising_isr(void)
 {
 	//digitalWrite(3, HIGH);
 	if (!(Wire.port.S & I2C_S_BUSY)) {
-		detachInterrupt(18);
+		detachInterrupt(Wire.hardware.sda_pin[Wire.sda_pin_index]);
 		if (Wire.user_onReceive != NULL) {
 			Wire.rxBufferIndex = 0;
 			Wire.user_onReceive(Wire.rxBufferLength);
@@ -426,7 +431,7 @@ void sda_rising_isr(void)
 		//delayMicroseconds(100);
 	} else {
 		if (++Wire.irqcount >= 2 || !Wire.slave_mode) {
-			detachInterrupt(18);
+			detachInterrupt(Wire.hardware.sda_pin[Wire.sda_pin_index]);
 		}
 	}
 	//digitalWrite(3, LOW);
@@ -618,6 +623,7 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 	return count;
 }
 
+#ifdef WIRE_IMPLEMENT_WIRE
 
 const TwoWire::I2C_Hardware_t TwoWire::i2c0_hardware = {
 	SIM_SCGC4, SIM_SCGC4_I2C0,
@@ -633,6 +639,13 @@ const TwoWire::I2C_Hardware_t TwoWire::i2c0_hardware = {
 	2, 2, 5, 7, 2,
 #endif
 };
+
+TwoWire Wire(KINETIS_I2C0, TwoWire::i2c0_hardware);
+
+#endif // WIRE_IMPLEMENT_WIRE
+
+
+#ifdef WIRE_IMPLEMENT_WIRE1
 
 const TwoWire::I2C_Hardware_t TwoWire::i2c1_hardware = {
 	SIM_SCGC4, SIM_SCGC4_I2C1,
@@ -651,13 +664,15 @@ const TwoWire::I2C_Hardware_t TwoWire::i2c1_hardware = {
 	2, 0, 0, 0, 0,
 	37, 255, 255, 255, 255,
 	2, 0, 0, 0, 0,
-#else
-	255, 255, 255, 255, 255,
-	0, 0, 0, 0, 0,
-	255, 255, 255, 255, 255,
-	0, 0, 0, 0, 0,
 #endif
 };
+
+TwoWire Wire1(KINETIS_I2C1, TwoWire::i2c1_hardware);
+
+#endif // WIRE_IMPLEMENT_WIRE1
+
+
+#ifdef WIRE_IMPLEMENT_WIRE2
 
 const TwoWire::I2C_Hardware_t TwoWire::i2c2_hardware = {
 	SIM_SCGC1, SIM_SCGC1_I2C2,
@@ -666,13 +681,13 @@ const TwoWire::I2C_Hardware_t TwoWire::i2c2_hardware = {
 	5, 0, 0, 0, 0,
 	3, 26, 255, 255, 255,
 	5, 5, 0, 0, 0,
-#else
-	255, 255, 255, 255, 255,
-	0, 0, 0, 0, 0,
-	255, 255, 255, 255, 255,
-	0, 0, 0, 0, 0,
 #endif
 };
+
+#endif // WIRE_IMPLEMENT_WIRE2
+
+
+#ifdef WIRE_IMPLEMENT_WIRE3
 
 const TwoWire::I2C_Hardware_t TwoWire::i2c3_hardware = {
 	SIM_SCGC1, SIM_SCGC1_I2C3,
@@ -681,18 +696,10 @@ const TwoWire::I2C_Hardware_t TwoWire::i2c3_hardware = {
 	2, 0, 0, 0, 0,
 	57, 255, 255, 255, 255,
 	2, 0, 0, 0, 0,
-#else
-	255, 255, 255, 255, 255,
-	0, 0, 0, 0, 0,
-	255, 255, 255, 255, 255,
-	0, 0, 0, 0, 0,
 #endif
 };
 
-
-TwoWire Wire(KINETIS_I2C0, TwoWire::i2c0_hardware);
-TwoWire Wire1(KINETIS_I2C1, TwoWire::i2c1_hardware);
-
+#endif // WIRE_IMPLEMENT_WIRE3
 
 
 #endif // __arm__ && TEENSYDUINO
