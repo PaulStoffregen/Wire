@@ -44,7 +44,8 @@
 
 void sda_rising_isr(void);
 
-TwoWire::TwoWire(KINETIS_I2C_t &myport) : port(myport)
+TwoWire::TwoWire(KINETIS_I2C_t &myport, const I2C_Hardware_t &myhardware)
+	: port(myport), hardware(myhardware)
 {
 	rxBufferIndex = 0;
 	rxBufferLength = 0;
@@ -63,7 +64,7 @@ void TwoWire::begin(void)
 	//serial_print("\nWire Begin\n");
 
 	slave_mode = 0;
-	SIM_SCGC4 |= SIM_SCGC4_I2C0; // TODO: use bitband
+	hardware.clock_gate_register |= hardware.clock_gate_mask;
 	port.C1 = 0;
 	// On Teensy 3.0 external pullup resistors *MUST* be used
 	// the PORT_PCR_PE bit is ignored when in I2C mode
@@ -107,7 +108,7 @@ void TwoWire::begin(void)
 
 void TwoWire::setClock(uint32_t frequency)
 {
-	if (!(SIM_SCGC4 & SIM_SCGC4_I2C0)) return;
+	if (!(hardware.clock_gate_register & hardware.clock_gate_mask)) return;
 
 #if F_BUS == 120000000
 	if (frequency < 400000) {
@@ -269,7 +270,7 @@ void TwoWire::setClock(uint32_t frequency)
 void TwoWire::setSDA(uint8_t pin)
 {
 	if (pin == sda_pin_num) return;
-	if ((SIM_SCGC4 & SIM_SCGC4_I2C0)) {
+	if ((hardware.clock_gate_register & hardware.clock_gate_mask)) {
 		if (sda_pin_num == 18) {
 			CORE_PIN18_CONFIG = 0;
 		} else if (sda_pin_num == 17) {
@@ -304,7 +305,7 @@ void TwoWire::setSDA(uint8_t pin)
 void TwoWire::setSCL(uint8_t pin)
 {
 	if (pin == scl_pin_num) return;
-	if ((SIM_SCGC4 & SIM_SCGC4_I2C0)) {
+	if ((hardware.clock_gate_register & hardware.clock_gate_mask)) {
 		if (scl_pin_num == 19) {
 			CORE_PIN19_CONFIG = 0;
 		} else if (scl_pin_num == 16) {
@@ -347,7 +348,7 @@ void TwoWire::begin(uint8_t address)
 
 void TwoWire::end()
 {
-	if (!(SIM_SCGC4 & SIM_SCGC4_I2C0)) return;
+	if (!(hardware.clock_gate_register & hardware.clock_gate_mask)) return;
 	NVIC_DISABLE_IRQ(IRQ_I2C0);
 	port.C1 = 0;
 	if (sda_pin_num == 18) {
@@ -376,7 +377,7 @@ void TwoWire::end()
 		CORE_PIN47_CONFIG = 0;
 #endif	
 	}
-	SIM_SCGC4 &= ~SIM_SCGC4_I2C0; // TODO: use bitband
+	hardware.clock_gate_register &= ~hardware.clock_gate_mask;
 }
 
 void i2c0_isr(void)
@@ -686,7 +687,13 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 
 
 
-TwoWire Wire(KINETIS_I2C0);
+
+const TwoWire::I2C_Hardware_t TwoWire::i2c0_hardware = {
+	SIM_SCGC4, SIM_SCGC4_I2C0
+};
+
+
+TwoWire Wire(KINETIS_I2C0, TwoWire::i2c0_hardware);
 
 
 

@@ -42,7 +42,14 @@ extern "C" void i2c0_isr(void);
 class TwoWire : public Stream
 {
 public:
-	TwoWire(KINETIS_I2C_t &myport);
+	// Hardware description struct
+	typedef struct {
+		volatile uint32_t &clock_gate_register;
+		uint32_t clock_gate_mask;
+	} I2C_Hardware_t;
+	static const I2C_Hardware_t i2c0_hardware;
+public:
+	TwoWire(KINETIS_I2C_t &myport, const I2C_Hardware_t &myhardware);
 	void begin();
 	void begin(uint8_t address);
 	void begin(int address) {
@@ -136,6 +143,7 @@ private:
 		port.S = I2C_S_IICIF;
 	}
 	KINETIS_I2C_t &port;
+	const I2C_Hardware_t &hardware;
 	uint8_t rxBuffer[BUFFER_LENGTH];
 	uint8_t rxBufferIndex;
 	uint8_t rxBufferLength;
