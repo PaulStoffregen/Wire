@@ -296,13 +296,13 @@ void TwoWire::begin(uint8_t address)
 	port.A1 = address << 1;
 	slave_mode = 1;
 	port.C1 = I2C_C1_IICEN | I2C_C1_IICIE;
-	NVIC_ENABLE_IRQ(IRQ_I2C0);
+	NVIC_ENABLE_IRQ(hardware.irq);
 }
 
 void TwoWire::end()
 {
 	if (!(hardware.clock_gate_register & hardware.clock_gate_mask)) return;
-	NVIC_DISABLE_IRQ(IRQ_I2C0);
+	NVIC_DISABLE_IRQ(hardware.irq);
 	// TODO: should this try to create a stop condition??
 	port.C1 = 0;
 	volatile uint32_t *reg;
@@ -313,10 +313,34 @@ void TwoWire::end()
 	hardware.clock_gate_register &= ~hardware.clock_gate_mask;
 }
 
+#ifdef WIRE_IMPLEMENT_WIRE
 void i2c0_isr(void)
 {
 	Wire.isr();
 }
+#endif
+
+#ifdef WIRE_IMPLEMENT_WIRE1
+void i2c1_isr(void)
+{
+	Wire1.isr();
+}
+#endif
+
+#ifdef WIRE_IMPLEMENT_WIRE2
+void i2c2_isr(void)
+{
+	Wire2.isr();
+}
+#endif
+
+#ifdef WIRE_IMPLEMENT_WIRE3
+void i2c3_isr(void)
+{
+	Wire3.isr();
+}
+#endif
+
 
 void TwoWire::isr(void)
 {
@@ -638,6 +662,7 @@ const TwoWire::I2C_Hardware_t TwoWire::i2c0_hardware = {
 	19, 16, 33, 7, 47,
 	2, 2, 5, 7, 2,
 #endif
+	IRQ_I2C0
 };
 
 TwoWire Wire(KINETIS_I2C0, TwoWire::i2c0_hardware);
@@ -665,6 +690,7 @@ const TwoWire::I2C_Hardware_t TwoWire::i2c1_hardware = {
 	37, 255, 255, 255, 255,
 	2, 0, 0, 0, 0,
 #endif
+	IRQ_I2C1
 };
 
 TwoWire Wire1(KINETIS_I2C1, TwoWire::i2c1_hardware);
@@ -682,6 +708,7 @@ const TwoWire::I2C_Hardware_t TwoWire::i2c2_hardware = {
 	3, 26, 255, 255, 255,
 	5, 5, 0, 0, 0,
 #endif
+	IRQ_I2C2
 };
 
 #endif // WIRE_IMPLEMENT_WIRE2
@@ -697,6 +724,7 @@ const TwoWire::I2C_Hardware_t TwoWire::i2c3_hardware = {
 	57, 255, 255, 255, 255,
 	2, 0, 0, 0, 0,
 #endif
+	IRQ_I2C3
 };
 
 #endif // WIRE_IMPLEMENT_WIRE3

@@ -84,6 +84,7 @@ public:
 		uint8_t  sda_mux[5];
 		uint8_t  scl_pin[5];
 		uint8_t  scl_mux[5];
+		IRQ_NUMBER_t irq;
 	} I2C_Hardware_t;
 	static const I2C_Hardware_t i2c0_hardware;
 	static const I2C_Hardware_t i2c1_hardware;
@@ -206,10 +207,25 @@ private:
 	void (*user_onReceive)(int);
 	//void sda_rising_isr(void);
 	friend void i2c0_isr(void);
+	friend void i2c1_isr(void);
+	friend void i2c2_isr(void);
+	friend void i2c3_isr(void);
 	friend void sda_rising_isr(void);
 };
 
+#ifdef WIRE_IMPLEMENT_WIRE
 extern TwoWire Wire;
+#endif
+#ifdef WIRE_IMPLEMENT_WIRE1
+extern TwoWire Wire1;
+#endif
+#ifdef WIRE_IMPLEMENT_WIRE2
+extern TwoWire Wire2;
+#endif
+#ifdef WIRE_IMPLEMENT_WIRE3
+extern TwoWire Wire3;
+#endif
+
 
 class TWBRemulation
 {
