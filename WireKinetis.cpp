@@ -26,29 +26,22 @@
 #include "kinetis.h"
 #include <string.h> // for memcpy
 #include "core_pins.h"
-//#include "HardwareSerial.h"
 #include "Wire.h"
 
-uint8_t TwoWire::rxBuffer[BUFFER_LENGTH];
-uint8_t TwoWire::rxBufferIndex = 0;
-uint8_t TwoWire::rxBufferLength = 0;
-uint8_t TwoWire::txBuffer[BUFFER_LENGTH+1];
-uint8_t TwoWire::txBufferIndex = 0;
-uint8_t TwoWire::txBufferLength = 0;
-uint8_t TwoWire::transmitting = 0;
-uint8_t TwoWire::sda_pin_num = 18;
-uint8_t TwoWire::scl_pin_num = 19;
-void (*TwoWire::user_onRequest)(void) = NULL;
-void (*TwoWire::user_onReceive)(int) = NULL;
-
+void sda_rising_isr(void);
 
 TwoWire::TwoWire()
 {
+	rxBufferIndex = 0;
+	rxBufferLength = 0;
+	txBufferIndex = 0;
+	txBufferLength = 0;
+	transmitting = 0;
+	sda_pin_num = 18;
+	scl_pin_num = 19;
+	user_onRequest = NULL;
+	user_onReceive = NULL;
 }
-
-static uint8_t slave_mode = 0;
-static uint8_t irqcount=0;
-
 
 void TwoWire::begin(void)
 {
@@ -255,7 +248,7 @@ void TwoWire::setClock(uint32_t frequency)
 	I2C0_F = 0x00; // 100 kHz
 	I2C0_FLT = 1;
 #else
-#error "F_BUS must be 120, 108, 96, 9, 80, 72, 64, 60, 56, 54, 48, 40, 36, 24, 16, 8, 4 or 2 MHz"
+#error "F_BUS must be 120, 108, 96, 90, 80, 72, 64, 60, 56, 54, 48, 40, 36, 24, 16, 8, 4 or 2 MHz"
 #endif
 }
 
@@ -383,7 +376,7 @@ void i2c0_isr(void)
 		// Arbitration Lost
 		I2C0_S = I2C_S_ARBL;
 		//serial_print("a");
-		if (receiving && TwoWire::rxBufferLength > 0) {
+		if (receiving && Wire.rxBufferLength > 0) {
 			// TODO: does this detect the STOP condition in slave receive mode?
 
 
@@ -397,25 +390,25 @@ void i2c0_isr(void)
 			//serial_print("T");
 			// Begin Slave Transmit
 			receiving = 0;
-			TwoWire::txBufferLength = 0;
-			if (TwoWire::user_onRequest != NULL) {
-				TwoWire::user_onRequest();
+			Wire.txBufferLength = 0;
+			if (Wire.user_onRequest != NULL) {
+				Wire.user_onRequest();
 			}
-			if (TwoWire::txBufferLength == 0) {
+			if (Wire.txBufferLength == 0) {
 				// is this correct, transmitting a single zero
 				// when we should send nothing?  Arduino's AVR
 				// implementation does this, but is it ok?
-				TwoWire::txBufferLength = 1;
-				TwoWire::txBuffer[0] = 0;
+				Wire.txBufferLength = 1;
+				Wire.txBuffer[0] = 0;
 			}
 			I2C0_C1 = I2C_C1_IICEN | I2C_C1_IICIE | I2C_C1_TX;
-			I2C0_D = TwoWire::txBuffer[0];
-			TwoWire::txBufferIndex = 1;
+			I2C0_D = Wire.txBuffer[0];
+			Wire.txBufferIndex = 1;
 		} else {
 			// Begin Slave Receive
 			//serial_print("R");
 			receiving = 1;
-			TwoWire::rxBufferLength = 0;
+			Wire.rxBufferLength = 0;
 			I2C0_C1 = I2C_C1_IICEN | I2C_C1_IICIE;
 			data = I2C0_D;
 		}
@@ -426,9 +419,9 @@ void i2c0_isr(void)
 	c1 = I2C0_FLT;
 	if ((c1 & I2C_FLT_STOPF) && (c1 & I2C_FLT_STOPIE)) {
 		I2C0_FLT = c1 & ~I2C_FLT_STOPIE;
-		if (TwoWire::user_onReceive != NULL) {
-			TwoWire::rxBufferIndex = 0;
-			TwoWire::user_onReceive(TwoWire::rxBufferLength);
+		if (Wire.user_onReceive != NULL) {
+			Wire.rxBufferIndex = 0;
+			Wire.user_onReceive(Wire.rxBufferLength);
 		}
 	}
 	#endif
@@ -439,8 +432,8 @@ void i2c0_isr(void)
 		if ((status & I2C_S_RXAK) == 0) {
 			//serial_print(".");
 			// Master ACK'd previous byte
-			if (TwoWire::txBufferIndex < TwoWire::txBufferLength) {
-				I2C0_D = TwoWire::txBuffer[TwoWire::txBufferIndex++];
+			if (Wire.txBufferIndex < Wire.txBufferLength) {
+				I2C0_D = Wire.txBuffer[Wire.txBufferIndex++];
 			} else {
 				I2C0_D = 0;
 			}
@@ -453,17 +446,17 @@ void i2c0_isr(void)
 		}
 	} else {
 		// Continue Slave Receive
-		irqcount = 0;
+		Wire.irqcount = 0;
 		#if defined(KINETISK)
-		attachInterrupt(18, TwoWire::sda_rising_isr, RISING);
+		attachInterrupt(18, sda_rising_isr, RISING);
 		#elif defined(KINETISL)
 		I2C0_FLT |= I2C_FLT_STOPIE;
 		#endif
 		//digitalWriteFast(4, HIGH);
 		data = I2C0_D;
 		//serial_phex(data);
-		if (TwoWire::rxBufferLength < BUFFER_LENGTH && receiving) {
-			TwoWire::rxBuffer[TwoWire::rxBufferLength++] = data;
+		if (Wire.rxBufferLength < BUFFER_LENGTH && receiving) {
+			Wire.rxBuffer[Wire.rxBufferLength++] = data;
 		}
 		//digitalWriteFast(4, LOW);
 	}
@@ -473,18 +466,18 @@ void i2c0_isr(void)
 // Detects the stop condition that terminates a slave receive transfer.
 // Sadly, the I2C in Kinetis K series lacks the stop detect interrupt
 // This pin change interrupt hack is needed to detect the stop condition
-void TwoWire::sda_rising_isr(void)
+void sda_rising_isr(void)
 {
 	//digitalWrite(3, HIGH);
 	if (!(I2C0_S & I2C_S_BUSY)) {
 		detachInterrupt(18);
-		if (user_onReceive != NULL) {
-			rxBufferIndex = 0;
-			user_onReceive(rxBufferLength);
+		if (Wire.user_onReceive != NULL) {
+			Wire.rxBufferIndex = 0;
+			Wire.user_onReceive(Wire.rxBufferLength);
 		}
 		//delayMicroseconds(100);
 	} else {
-		if (++irqcount >= 2 || !slave_mode) {
+		if (++Wire.irqcount >= 2 || !Wire.slave_mode) {
 			detachInterrupt(18);
 		}
 	}
@@ -758,11 +751,6 @@ void TwoWire::beginTransmission(int address)
 uint8_t TwoWire::endTransmission(void)
 {
 	return endTransmission(true);
-}
-
-void TwoWire::begin(int address)
-{
-	begin((uint8_t)address);
 }
 
 void TwoWire::onReceive( void (*function)(int) )

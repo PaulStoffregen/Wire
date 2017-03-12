@@ -32,68 +32,93 @@ extern "C" void i2c0_isr(void);
 #define BUFFER_LENGTH 32
 #define WIRE_HAS_END 1
 
+#if defined(__MKL26Z64__)
+#define WIRE_HAS_STOP_INTERRUPT 1
+#elif defined(__MK64FX512__) || defined(__MK66FX1M0__)
+#define WIRE_HAS_START_INTERRUPT 1
+#define WIRE_HAS_STOP_INTERRUPT 1
+#endif
+
 class TwoWire : public Stream
 {
-  private:
-    static uint8_t rxBuffer[];
-    static uint8_t rxBufferIndex;
-    static uint8_t rxBufferLength;
-
-    static uint8_t txAddress;
-    static uint8_t txBuffer[];
-    static uint8_t txBufferIndex;
-    static uint8_t txBufferLength;
-
-    static uint8_t transmitting;
-    static void onRequestService(void);
-    static void onReceiveService(uint8_t*, int);
-    static void (*user_onRequest)(void);
-    static void (*user_onReceive)(int);
-    static void sda_rising_isr(void);
-    static uint8_t sda_pin_num;
-    static uint8_t scl_pin_num;
-    friend void i2c0_isr(void);
-  public:
-    TwoWire();
-    void begin();
-    void begin(uint8_t);
-    void begin(int);
-    void end();
-    void setClock(uint32_t);
-    void setSDA(uint8_t);
-    void setSCL(uint8_t);
-    void beginTransmission(uint8_t);
-    void beginTransmission(int);
-    uint8_t endTransmission(void);
-    uint8_t endTransmission(uint8_t);
-    uint8_t requestFrom(uint8_t, uint8_t);
-    uint8_t requestFrom(uint8_t, uint8_t, uint8_t);
-    uint8_t requestFrom(int, int);
-    uint8_t requestFrom(int, int, int);
-    virtual size_t write(uint8_t);
-    virtual size_t write(const uint8_t *, size_t);
-    virtual int available(void);
-    virtual int read(void);
-    virtual int peek(void);
+public:
+	TwoWire();
+	void begin();
+	void begin(uint8_t address);
+	void begin(int address) {
+		begin((uint8_t)address);
+	}
+	void end();
+	void setClock(uint32_t);
+	void setSDA(uint8_t);
+	void setSCL(uint8_t);
+	void beginTransmission(uint8_t);
+	void beginTransmission(int);
+	uint8_t endTransmission(void);
+	uint8_t endTransmission(uint8_t);
+	uint8_t requestFrom(uint8_t, uint8_t);
+	uint8_t requestFrom(uint8_t, uint8_t, uint8_t);
+	uint8_t requestFrom(int, int);
+	uint8_t requestFrom(int, int, int);
+	virtual size_t write(uint8_t);
+	virtual size_t write(const uint8_t *, size_t);
+	virtual int available(void);
+	virtual int read(void);
+	virtual int peek(void);
 	virtual void flush(void);
-    void onReceive( void (*)(int) );
-    void onRequest( void (*)(void) );
-    // added by Teensyduino installer, for compatibility
-    // with pre-1.0 sketches and libraries
-    void send(uint8_t b)               { write(b); }
-    void send(uint8_t *s, uint8_t n)   { write(s, n); }
-    void send(int n)                   { write((uint8_t)n); }
-    void send(char *s)                 { write(s); }
-    uint8_t receive(void) {
-        int c = read();
-        if (c < 0) return 0;
-        return c;
-    }
-    inline size_t write(unsigned long n) { return write((uint8_t)n); }
-    inline size_t write(long n) { return write((uint8_t)n); }
-    inline size_t write(unsigned int n) { return write((uint8_t)n); }
-    inline size_t write(int n) { return write((uint8_t)n); }
-    using Print::write;
+	void onReceive(void (*function)(int));
+	void onRequest(void (*function)(void));
+	// send() for compatibility with very old sketches and libraries
+	void send(uint8_t b) {
+		write(b);
+	}
+	void send(uint8_t *s, uint8_t n) {
+		write(s, n);
+	}
+	void send(int n) {
+		write((uint8_t)n);
+	}
+	void send(char *s) {
+		write(s);
+	}
+	uint8_t receive(void) {
+		int c = read();
+		if (c < 0) return 0;
+		return c;
+	}
+	size_t write(unsigned long n) {
+		return write((uint8_t)n);
+	}
+	size_t write(long n) {
+		return write((uint8_t)n);
+	}
+	size_t write(unsigned int n) {
+		return write((uint8_t)n);
+	}
+	size_t write(int n) {
+		return write((uint8_t)n);
+	}
+	using Print::write;
+private:
+	uint8_t rxBuffer[BUFFER_LENGTH];
+	uint8_t rxBufferIndex;
+	uint8_t rxBufferLength;
+	uint8_t txAddress;
+	uint8_t txBuffer[BUFFER_LENGTH+1];
+	uint8_t txBufferIndex;
+	uint8_t txBufferLength;
+	uint8_t transmitting;
+	uint8_t slave_mode;
+	uint8_t irqcount;
+	void onRequestService(void);
+	void onReceiveService(uint8_t*, int);
+	void (*user_onRequest)(void);
+	void (*user_onReceive)(int);
+	void sda_rising_isr(void);
+	uint8_t sda_pin_num;
+	uint8_t scl_pin_num;
+	friend void i2c0_isr(void);
+	friend void sda_rising_isr(void);
 };
 
 extern TwoWire Wire;
