@@ -530,6 +530,7 @@ size_t TwoWire::write(const uint8_t *data, size_t quantity)
 uint8_t TwoWire::endTransmission(uint8_t sendStop)
 {
 	uint8_t i, status, ret=0;
+	uint32_t wait_begin;
 
 	// clear the status flags
 	port.S = I2C_S_IICIF | I2C_S_ARBL;
@@ -541,7 +542,7 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 	} else {
 		// we are not currently the bus master, so wait for bus ready
 		//Serial.print("busy:");
-		uint32_t wait_begin = millis();
+		wait_begin = millis();
 		while (i2c_status() & I2C_S_BUSY) {
 			//Serial.write('.') ;
 			if (millis() - wait_begin > 15) {
@@ -549,7 +550,7 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 				port.C1 = 0;
 				port.C1 = I2C_C1_IICEN;
 				//Serial.println("abort");
-				return 4;
+				return 4; // timeout waiting for bus
 			}
 		}
 		// become the bus master in transmit mode (send start)
@@ -557,18 +558,33 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 		port.C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_TX;
 	}
 	// wait until start condition establishes control of the bus
+	wait_begin = millis();
 	while (1) {
 		status = i2c_status();
 		if ((status & I2C_S_BUSY)) break;
+		//Serial.write('*') ;
+		if (millis() - wait_begin > 4) {
+			port.C1 = 0;
+			port.C1 = I2C_C1_IICEN;
+			//Serial.println("abort2");
+			return 4; // error generating start condition
+		}
 	}
 	// transmit the address and data
 	for (i=0; i < txBufferLength; i++) {
 		port.D = txBuffer[i];
 		//Serial.write('^');
+		wait_begin = millis();
 		while (1) {
 			status = i2c_status();
 			if ((status & I2C_S_IICIF)) break;
 			if (!(status & I2C_S_BUSY)) break;
+			if (millis() - wait_begin > 5) {
+				port.C1 = 0;
+				port.C1 = I2C_C1_IICEN;
+				//Serial.println("abort3");
+				return 4; // clock stretch too long
+			}
 		}
 		port.S = I2C_S_IICIF;
 		//Serial.write('$');
