@@ -39,7 +39,8 @@
 // Teensy LC
 #if defined(__MKL26Z64__)
 #define WIRE_IMPLEMENT_WIRE
-#define WIRE_IMPLEMENT_WIRE1
+//Wire1 consumes precious memory on Teensy LC
+//#define WIRE_IMPLEMENT_WIRE1
 #define WIRE_HAS_STOP_INTERRUPT
 
 // Teensy 3.0
@@ -64,7 +65,8 @@
 #define WIRE_IMPLEMENT_WIRE
 #define WIRE_IMPLEMENT_WIRE1
 #define WIRE_IMPLEMENT_WIRE2
-#define WIRE_IMPLEMENT_WIRE3
+//Wire3 is seldom used on Teensy 3.6
+//#define WIRE_IMPLEMENT_WIRE3
 #define WIRE_HAS_START_INTERRUPT
 #define WIRE_HAS_STOP_INTERRUPT
 

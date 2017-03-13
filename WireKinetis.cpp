@@ -313,34 +313,6 @@ void TwoWire::end()
 	hardware.clock_gate_register &= ~hardware.clock_gate_mask;
 }
 
-#ifdef WIRE_IMPLEMENT_WIRE
-void i2c0_isr(void)
-{
-	Wire.isr();
-}
-#endif
-
-#ifdef WIRE_IMPLEMENT_WIRE1
-void i2c1_isr(void)
-{
-	Wire1.isr();
-}
-#endif
-
-#ifdef WIRE_IMPLEMENT_WIRE2
-void i2c2_isr(void)
-{
-	Wire2.isr();
-}
-#endif
-
-#ifdef WIRE_IMPLEMENT_WIRE3
-void i2c3_isr(void)
-{
-	Wire3.isr();
-}
-#endif
-
 
 void TwoWire::isr(void)
 {
@@ -758,15 +730,19 @@ const TwoWire::I2C_Hardware_t TwoWire::i2c3_hardware = {
 
 #ifdef WIRE_IMPLEMENT_WIRE
 TwoWire Wire(KINETIS_I2C0, TwoWire::i2c0_hardware);
+void i2c0_isr(void) { Wire.isr(); }
 #endif
 #ifdef WIRE_IMPLEMENT_WIRE1
 TwoWire Wire1(KINETIS_I2C1, TwoWire::i2c1_hardware);
+void i2c1_isr(void) { Wire1.isr(); }
 #endif
 #ifdef WIRE_IMPLEMENT_WIRE2
 TwoWire Wire2(KINETIS_I2C2, TwoWire::i2c2_hardware);
+void i2c2_isr(void) { Wire2.isr(); }
 #endif
 #ifdef WIRE_IMPLEMENT_WIRE3
 TwoWire Wire3(KINETIS_I2C3, TwoWire::i2c3_hardware);
+void i2c3_isr(void) { Wire3.isr(); }
 #endif
 
 
