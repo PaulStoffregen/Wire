@@ -602,6 +602,7 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 {
 	uint8_t tmp __attribute__((unused));
 	uint8_t status, count=0;
+	uint32_t wait_begin;
 
 	rxBufferIndex = 0;
 	rxBufferLength = 0;
@@ -614,14 +615,42 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 		port.C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_RSTA | I2C_C1_TX;
 	} else {
 		// we are not currently the bus master, so wait for bus ready
-		while (i2c_status() & I2C_S_BUSY) ;
+		wait_begin = millis();
+		while (i2c_status() & I2C_S_BUSY) {
+			if (millis() - wait_begin > 15) {
+				// bus stuck busy too long
+				port.C1 = 0;
+				port.C1 = I2C_C1_IICEN;
+				return 0; // timeout waiting for bus
+			}
+		}
 		// become the bus master in transmit mode (send start)
 		slave_mode = 0;
 		port.C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_TX;
 	}
+
+	// wait until start condition establishes control of the bus
+	wait_begin = millis();
+	while (1) {
+		status = i2c_status();
+		if ((status & I2C_S_BUSY)) break;
+		if (millis() - wait_begin > 4) {
+			port.C1 = 0;
+			port.C1 = I2C_C1_IICEN;
+			return 0; // error generating start condition
+		}
+	}
 	// send the address
 	port.D = (address << 1) | 1;
-	i2c_wait();
+	wait_begin = millis();
+	while (!(port.S & I2C_S_IICIF)) {
+		if (millis() - wait_begin > 5) {
+			port.C1 = 0;
+			port.C1 = I2C_C1_IICEN;
+			return 0; // clock stretch too long (during address)
+		}
+	}
+	port.S = I2C_S_IICIF;
 	status = i2c_status();
 	if ((status & I2C_S_RXAK) || (status & I2C_S_ARBL)) {
 		// the slave device did not acknowledge
@@ -641,7 +670,15 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 	}
 	tmp = port.D; // initiate the first receive
 	while (length > 1) {
-		i2c_wait();
+		wait_begin = millis();
+		while (!(port.S & I2C_S_IICIF)) {
+			if (millis() - wait_begin > 5) {
+				port.C1 = 0;
+				port.C1 = I2C_C1_IICEN;
+				return count; // clock stretch too long (during data)
+			}
+		}
+		port.S = I2C_S_IICIF;
 		length--;
 		if (length == 1) port.C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_TXAK;
 		if (count < BUFFER_LENGTH) {
@@ -650,7 +687,15 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 			tmp = port.D;
 		}
 	}
-	i2c_wait();
+	wait_begin = millis();
+	while (!(port.S & I2C_S_IICIF)) {
+		if (millis() - wait_begin > 5) {
+			port.C1 = 0;
+			port.C1 = I2C_C1_IICEN;
+			return count; // clock stretch too long (during data)
+		}
+	}
+	port.S = I2C_S_IICIF;
 	port.C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_TX;
 	if (count < BUFFER_LENGTH) {
 		rxBuffer[count++] = port.D;

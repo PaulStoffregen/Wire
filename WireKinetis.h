@@ -182,10 +182,6 @@ private:
 	uint8_t i2c_status(void) {
 		return port.S;
 	}
-	void i2c_wait(void) {
-		while (!(port.S & I2C_S_IICIF)) ; // wait (TODO: timeout)
-		port.S = I2C_S_IICIF;
-	}
 	void isr(void);
 	KINETIS_I2C_t &port;
 	const I2C_Hardware_t &hardware;
