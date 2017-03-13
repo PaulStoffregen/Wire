@@ -690,8 +690,6 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 	return count;
 }
 
-#ifdef WIRE_IMPLEMENT_WIRE
-
 const TwoWire::I2C_Hardware_t TwoWire::i2c0_hardware = {
 	SIM_SCGC4, SIM_SCGC4_I2C0,
 #if defined(__MKL26Z64__) || defined(__MK20DX128__) || defined(__MK20DX256__)
@@ -708,13 +706,7 @@ const TwoWire::I2C_Hardware_t TwoWire::i2c0_hardware = {
 	IRQ_I2C0
 };
 
-TwoWire Wire(KINETIS_I2C0, TwoWire::i2c0_hardware);
-
-#endif // WIRE_IMPLEMENT_WIRE
-
-
-#ifdef WIRE_IMPLEMENT_WIRE1
-
+#if defined(__MKL26Z64__) || defined(__MK20DX256__) || defined(__MK64FX512__) || defined(__MK66FX1M0__)
 const TwoWire::I2C_Hardware_t TwoWire::i2c1_hardware = {
 	SIM_SCGC4, SIM_SCGC4_I2C1,
 #if defined(__MKL26Z64__)
@@ -735,14 +727,9 @@ const TwoWire::I2C_Hardware_t TwoWire::i2c1_hardware = {
 #endif
 	IRQ_I2C1
 };
+#endif
 
-TwoWire Wire1(KINETIS_I2C1, TwoWire::i2c1_hardware);
-
-#endif // WIRE_IMPLEMENT_WIRE1
-
-
-#ifdef WIRE_IMPLEMENT_WIRE2
-
+#if defined(__MK64FX512__) || defined(__MK66FX1M0__)
 const TwoWire::I2C_Hardware_t TwoWire::i2c2_hardware = {
 	SIM_SCGC1, SIM_SCGC1_I2C2,
 #if defined(__MK64FX512__) || defined(__MK66FX1M0__)
@@ -753,14 +740,9 @@ const TwoWire::I2C_Hardware_t TwoWire::i2c2_hardware = {
 #endif
 	IRQ_I2C2
 };
+#endif
 
-TwoWire Wire2(KINETIS_I2C2, TwoWire::i2c2_hardware);
-
-#endif // WIRE_IMPLEMENT_WIRE2
-
-
-#ifdef WIRE_IMPLEMENT_WIRE3
-
+#if defined(__MK66FX1M0__)
 const TwoWire::I2C_Hardware_t TwoWire::i2c3_hardware = {
 	SIM_SCGC1, SIM_SCGC1_I2C3,
 #if defined(__MK66FX1M0__)
@@ -771,10 +753,21 @@ const TwoWire::I2C_Hardware_t TwoWire::i2c3_hardware = {
 #endif
 	IRQ_I2C3
 };
+#endif
 
+
+#ifdef WIRE_IMPLEMENT_WIRE
+TwoWire Wire(KINETIS_I2C0, TwoWire::i2c0_hardware);
+#endif
+#ifdef WIRE_IMPLEMENT_WIRE1
+TwoWire Wire1(KINETIS_I2C1, TwoWire::i2c1_hardware);
+#endif
+#ifdef WIRE_IMPLEMENT_WIRE2
+TwoWire Wire2(KINETIS_I2C2, TwoWire::i2c2_hardware);
+#endif
+#ifdef WIRE_IMPLEMENT_WIRE3
 TwoWire Wire3(KINETIS_I2C3, TwoWire::i2c3_hardware);
-
-#endif // WIRE_IMPLEMENT_WIRE3
+#endif
 
 
 #endif // __arm__ && TEENSYDUINO
