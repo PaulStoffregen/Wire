@@ -675,6 +675,7 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 			if (millis() - wait_begin > 5) {
 				port.C1 = 0;
 				port.C1 = I2C_C1_IICEN;
+				rxBufferLength = count;
 				return count; // clock stretch too long (during data)
 			}
 		}
@@ -692,6 +693,7 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 		if (millis() - wait_begin > 5) {
 			port.C1 = 0;
 			port.C1 = I2C_C1_IICEN;
+			rxBufferLength = count;
 			return count; // clock stretch too long (during data)
 		}
 	}
