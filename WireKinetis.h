@@ -91,8 +91,8 @@ public:
 	static const I2C_Hardware_t i2c2_hardware;
 	static const I2C_Hardware_t i2c3_hardware;
 public:
-	TwoWire(KINETIS_I2C_t &myport, const I2C_Hardware_t &myhardware)
-		: port(myport), hardware(myhardware), sda_pin_index(0), scl_pin_index(0) {
+	constexpr TwoWire(uintptr_t port_addr, const I2C_Hardware_t &myhardware)
+		: port_addr(port_addr), hardware(myhardware) {
 	}
 	void begin();
 	void begin(uint8_t address);
@@ -179,28 +179,29 @@ public:
 	}
 	using Print::write;
 private:
+	KINETIS_I2C_t& port() { return (*(KINETIS_I2C_t *) port_addr); }
 	uint8_t i2c_status(void) {
-		return port.S;
+		return port().S;
 	}
 	void isr(void);
-	KINETIS_I2C_t &port;
+	uintptr_t port_addr;
 	const I2C_Hardware_t &hardware;
-	uint8_t rxBuffer[BUFFER_LENGTH];
-	uint8_t rxBufferIndex;
-	uint8_t rxBufferLength;
-	uint8_t txAddress;
-	uint8_t txBuffer[BUFFER_LENGTH+1];
-	uint8_t txBufferIndex;
-	uint8_t txBufferLength;
-	uint8_t transmitting;
-	uint8_t slave_mode;
-	uint8_t irqcount;
-	uint8_t sda_pin_index;
-	uint8_t scl_pin_index;
+	uint8_t rxBuffer[BUFFER_LENGTH] = {};
+	uint8_t rxBufferIndex = 0;
+	uint8_t rxBufferLength = 0;
+	uint8_t txAddress = 0;
+	uint8_t txBuffer[BUFFER_LENGTH+1] = {};
+	uint8_t txBufferIndex = 0;
+	uint8_t txBufferLength = 0;
+	uint8_t transmitting = 0;
+	uint8_t slave_mode = 0;
+	uint8_t irqcount = 0;
+	uint8_t sda_pin_index = 0;
+	uint8_t scl_pin_index = 0;
 	void onRequestService(void);
 	void onReceiveService(uint8_t*, int);
-	void (*user_onRequest)(void);
-	void (*user_onReceive)(int);
+	void (*user_onRequest)(void) = nullptr;
+	void (*user_onReceive)(int) = nullptr;
 	void sda_rising_isr(void);
 	friend void i2c0_isr(void);
 	friend void i2c1_isr(void);
