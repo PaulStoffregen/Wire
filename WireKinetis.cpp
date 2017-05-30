@@ -64,7 +64,7 @@ void TwoWire::begin(void)
 	user_onReceive = NULL;
 	slave_mode = 0;
 	hardware.clock_gate_register |= hardware.clock_gate_mask;
-	port.C1 = 0;
+	port().C1 = 0;
 	// On Teensy 3.0 external pullup resistors *MUST* be used
 	// the PORT_PCR_PE bit is ignored when in I2C mode
 	// I2C will not work at all without pullup resistors
@@ -81,8 +81,8 @@ void TwoWire::begin(void)
 	mux = PORT_PCR_MUX(hardware.scl_mux[scl_pin_index]);
 	*reg = mux|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
 	setClock(100000);
-	port.C2 = I2C_C2_HDRS;
-	port.C1 = I2C_C1_IICEN;
+	port().C2 = I2C_C2_HDRS;
+	port().C1 = I2C_C1_IICEN;
 	//pinMode(3, OUTPUT);
 	//pinMode(4, OUTPUT);
 }
@@ -93,156 +93,156 @@ void TwoWire::setClock(uint32_t frequency)
 
 #if F_BUS == 120000000
 	if (frequency < 400000) {
-		port.F = I2C_F_DIV1152; // 104 kHz
+		port().F = I2C_F_DIV1152; // 104 kHz
 	} else if (frequency < 1000000) {
-		port.F = I2C_F_DIV288; // 416 kHz
+		port().F = I2C_F_DIV288; // 416 kHz
 	} else {
-		port.F = I2C_F_DIV128; // 0.94 MHz
+		port().F = I2C_F_DIV128; // 0.94 MHz
 	}
-	port.FLT = 4;
+	port().FLT = 4;
 #elif F_BUS == 108000000
 	if (frequency < 400000) {
-		port.F = I2C_F_DIV1024; // 105 kHz
+		port().F = I2C_F_DIV1024; // 105 kHz
 	} else if (frequency < 1000000) {
-		port.F = I2C_F_DIV256; //  422 kHz
+		port().F = I2C_F_DIV256; //  422 kHz
 	} else {
-		port.F = I2C_F_DIV112; // 0.96 MHz
+		port().F = I2C_F_DIV112; // 0.96 MHz
 	}
-	port.FLT = 4;
+	port().FLT = 4;
 #elif F_BUS == 96000000
 	if (frequency < 400000) {
-		port.F = I2C_F_DIV960; // 100 kHz
+		port().F = I2C_F_DIV960; // 100 kHz
 	} else if (frequency < 1000000) {
-		port.F = I2C_F_DIV240; // 400 kHz
+		port().F = I2C_F_DIV240; // 400 kHz
 	} else {
-		port.F = I2C_F_DIV96; // 1.0 MHz
+		port().F = I2C_F_DIV96; // 1.0 MHz
 	}
-	port.FLT = 4;
+	port().FLT = 4;
 #elif F_BUS == 90000000
 	if (frequency < 400000) {
-		port.F = I2C_F_DIV896; // 100 kHz
+		port().F = I2C_F_DIV896; // 100 kHz
 	} else if (frequency < 1000000) {
-		port.F = I2C_F_DIV224; // 402 kHz
+		port().F = I2C_F_DIV224; // 402 kHz
 	} else {
-		port.F = I2C_F_DIV88; // 1.02 MHz
+		port().F = I2C_F_DIV88; // 1.02 MHz
 	}
-	port.FLT = 4;
+	port().FLT = 4;
 #elif F_BUS == 80000000
 	if (frequency < 400000) {
-		port.F = I2C_F_DIV768; // 104 kHz
+		port().F = I2C_F_DIV768; // 104 kHz
 	} else if (frequency < 1000000) {
-		port.F = I2C_F_DIV192; // 416 kHz
+		port().F = I2C_F_DIV192; // 416 kHz
 	} else {
-		port.F = I2C_F_DIV80; // 1.0 MHz
+		port().F = I2C_F_DIV80; // 1.0 MHz
 	}
-	port.FLT = 4;
+	port().FLT = 4;
 #elif F_BUS == 72000000
 	if (frequency < 400000) {
-		port.F = I2C_F_DIV640; // 112 kHz
+		port().F = I2C_F_DIV640; // 112 kHz
 	} else if (frequency < 1000000) {
-		port.F = I2C_F_DIV192; // 375 kHz
+		port().F = I2C_F_DIV192; // 375 kHz
 	} else {
-		port.F = I2C_F_DIV72; // 1.0 MHz
+		port().F = I2C_F_DIV72; // 1.0 MHz
 	}
-	port.FLT = 4;
+	port().FLT = 4;
 #elif F_BUS == 64000000
 	if (frequency < 400000) {
-		port.F = I2C_F_DIV640; // 100 kHz
+		port().F = I2C_F_DIV640; // 100 kHz
 	} else if (frequency < 1000000) {
-		port.F = I2C_F_DIV160; // 400 kHz
+		port().F = I2C_F_DIV160; // 400 kHz
 	} else {
-		port.F = I2C_F_DIV64; // 1.0 MHz
+		port().F = I2C_F_DIV64; // 1.0 MHz
 	}
-	port.FLT = 4;
+	port().FLT = 4;
 #elif F_BUS == 60000000
 	if (frequency < 400000) {
-		port.F = 0x2C;	// 104 kHz
+		port().F = 0x2C;	// 104 kHz
 	} else if (frequency < 1000000) {
-		port.F = 0x1C; // 416 kHz
+		port().F = 0x1C; // 416 kHz
 	} else {
-		port.F = 0x12; // 938 kHz
+		port().F = 0x12; // 938 kHz
 	}
-	port.FLT = 4;
+	port().FLT = 4;
 #elif F_BUS == 56000000
 	if (frequency < 400000) {
-		port.F = 0x2B;	// 109 kHz
+		port().F = 0x2B;	// 109 kHz
 	} else if (frequency < 1000000) {
-		port.F = 0x1C; // 389 kHz
+		port().F = 0x1C; // 389 kHz
 	} else {
-		port.F = 0x0E; // 1 MHz
+		port().F = 0x0E; // 1 MHz
 	}
-	port.FLT = 4;
+	port().FLT = 4;
 #elif F_BUS == 54000000
 	if (frequency < 400000) {
-		port.F = I2C_F_DIV512;	// 105 kHz
+		port().F = I2C_F_DIV512;	// 105 kHz
 	} else if (frequency < 1000000) {
-		port.F = I2C_F_DIV128; // 422 kHz
+		port().F = I2C_F_DIV128; // 422 kHz
 	} else {
-		port.F = I2C_F_DIV56; // 0.96 MHz
+		port().F = I2C_F_DIV56; // 0.96 MHz
 	}
-	port.FLT = 4;
+	port().FLT = 4;
 #elif F_BUS == 48000000
 	if (frequency < 400000) {
-		port.F = 0x27;	// 100 kHz
+		port().F = 0x27;	// 100 kHz
 	} else if (frequency < 1000000) {
-		port.F = 0x1A; // 400 kHz
+		port().F = 0x1A; // 400 kHz
 	} else {
-		port.F = 0x0D; // 1 MHz
+		port().F = 0x0D; // 1 MHz
 	}
-	port.FLT = 4;
+	port().FLT = 4;
 #elif F_BUS == 40000000
 	if (frequency < 400000) {
-		port.F = 0x29;	// 104 kHz
+		port().F = 0x29;	// 104 kHz
 	} else if (frequency < 1000000) {
-		port.F = 0x19; // 416 kHz
+		port().F = 0x19; // 416 kHz
 	} else {
-		port.F = 0x0B; // 1 MHz
+		port().F = 0x0B; // 1 MHz
 	}
-	port.FLT = 3;
+	port().FLT = 3;
 #elif F_BUS == 36000000
 	if (frequency < 400000) {
-		port.F = 0x28;	// 113 kHz
+		port().F = 0x28;	// 113 kHz
 	} else if (frequency < 1000000) {
-		port.F = 0x19; // 375 kHz
+		port().F = 0x19; // 375 kHz
 	} else {
-		port.F = 0x0A; // 1 MHz
+		port().F = 0x0A; // 1 MHz
 	}
-	port.FLT = 3;
+	port().FLT = 3;
 #elif F_BUS == 24000000
 	if (frequency < 400000) {
-		port.F = 0x1F; // 100 kHz
+		port().F = 0x1F; // 100 kHz
 	} else if (frequency < 1000000) {
-		port.F = 0x12; // 375 kHz
+		port().F = 0x12; // 375 kHz
 	} else {
-		port.F = 0x02; // 1 MHz
+		port().F = 0x02; // 1 MHz
 	}
-	port.FLT = 2;
+	port().FLT = 2;
 #elif F_BUS == 16000000
 	if (frequency < 400000) {
-		port.F = 0x20; // 100 kHz
+		port().F = 0x20; // 100 kHz
 	} else if (frequency < 1000000) {
-		port.F = 0x07; // 400 kHz
+		port().F = 0x07; // 400 kHz
 	} else {
-		port.F = 0x00; // 800 MHz
+		port().F = 0x00; // 800 MHz
 	}
-	port.FLT = 1;
+	port().FLT = 1;
 #elif F_BUS == 8000000
 	if (frequency < 400000) {
-		port.F = 0x14; // 100 kHz
+		port().F = 0x14; // 100 kHz
 	} else {
-		port.F = 0x00; // 400 kHz
+		port().F = 0x00; // 400 kHz
 	}
-	port.FLT = 1;
+	port().FLT = 1;
 #elif F_BUS == 4000000
 	if (frequency < 400000) {
-		port.F = 0x07; // 100 kHz
+		port().F = 0x07; // 100 kHz
 	} else {
-		port.F = 0x00; // 200 kHz
+		port().F = 0x00; // 200 kHz
 	}
-	port.FLT = 1;
+	port().FLT = 1;
 #elif F_BUS == 2000000
-	port.F = 0x00; // 100 kHz
-	port.FLT = 1;
+	port().F = 0x00; // 100 kHz
+	port().FLT = 1;
 #else
 #error "F_BUS must be 120, 108, 96, 90, 80, 72, 64, 60, 56, 54, 48, 40, 36, 24, 16, 8, 4 or 2 MHz"
 #endif
@@ -293,9 +293,9 @@ void TwoWire::setSCL(uint8_t pin)
 void TwoWire::begin(uint8_t address)
 {
 	begin();
-	port.A1 = address << 1;
+	port().A1 = address << 1;
 	slave_mode = 1;
-	port.C1 = I2C_C1_IICEN | I2C_C1_IICIE;
+	port().C1 = I2C_C1_IICEN | I2C_C1_IICIE;
 	NVIC_ENABLE_IRQ(hardware.irq);
 }
 
@@ -304,7 +304,7 @@ void TwoWire::end()
 	if (!(hardware.clock_gate_register & hardware.clock_gate_mask)) return;
 	NVIC_DISABLE_IRQ(hardware.irq);
 	// TODO: should this try to create a stop condition??
-	port.C1 = 0;
+	port().C1 = 0;
 	volatile uint32_t *reg;
 	reg = portConfigRegister(hardware.scl_pin[scl_pin_index]);
 	*reg = 0;
@@ -319,11 +319,11 @@ void TwoWire::isr(void)
 	uint8_t status, c1, data;
 	static uint8_t receiving=0;
 
-	status = port.S;
+	status = port().S;
 	//serial_print(".");
 	if (status & I2C_S_ARBL) {
 		// Arbitration Lost
-		port.S = I2C_S_ARBL;
+		port().S = I2C_S_ARBL;
 		//serial_print("a");
 		if (receiving && rxBufferLength > 0) {
 			// TODO: does this detect the STOP condition in slave receive mode?
@@ -350,31 +350,31 @@ void TwoWire::isr(void)
 				txBufferLength = 1;
 				txBuffer[0] = 0;
 			}
-			port.C1 = I2C_C1_IICEN | I2C_C1_IICIE | I2C_C1_TX;
-			port.D = txBuffer[0];
+			port().C1 = I2C_C1_IICEN | I2C_C1_IICIE | I2C_C1_TX;
+			port().D = txBuffer[0];
 			txBufferIndex = 1;
 		} else {
 			// Begin Slave Receive
 			//serial_print("R");
 			receiving = 1;
 			rxBufferLength = 0;
-			port.C1 = I2C_C1_IICEN | I2C_C1_IICIE;
-			data = port.D;
+			port().C1 = I2C_C1_IICEN | I2C_C1_IICIE;
+			data = port().D;
 		}
-		port.S = I2C_S_IICIF;
+		port().S = I2C_S_IICIF;
 		return;
 	}
 	#if defined(WIRE_HAS_STOP_INTERRUPT)
-	c1 = port.FLT;
+	c1 = port().FLT;
 	if ((c1 & I2C_FLT_STOPF) && (c1 & I2C_FLT_STOPIE)) {
-		port.FLT = c1 & ~I2C_FLT_STOPIE;
+		port().FLT = c1 & ~I2C_FLT_STOPIE;
 		if (user_onReceive != NULL) {
 			rxBufferIndex = 0;
 			user_onReceive(rxBufferLength);
 		}
 	}
 	#endif
-	c1 = port.C1;
+	c1 = port().C1;
 	if (c1 & I2C_C1_TX) {
 		// Continue Slave Transmit
 		//serial_print("t");
@@ -382,22 +382,22 @@ void TwoWire::isr(void)
 			//serial_print(".");
 			// Master ACK'd previous byte
 			if (txBufferIndex < txBufferLength) {
-				port.D = txBuffer[txBufferIndex++];
+				port().D = txBuffer[txBufferIndex++];
 			} else {
-				port.D = 0;
+				port().D = 0;
 			}
-			port.C1 = I2C_C1_IICEN | I2C_C1_IICIE | I2C_C1_TX;
+			port().C1 = I2C_C1_IICEN | I2C_C1_IICIE | I2C_C1_TX;
 		} else {
 			//serial_print("*");
 			// Master did not ACK previous byte
-			port.C1 = I2C_C1_IICEN | I2C_C1_IICIE;
-			data = port.D;
+			port().C1 = I2C_C1_IICEN | I2C_C1_IICIE;
+			data = port().D;
 		}
 	} else {
 		// Continue Slave Receive
 		irqcount = 0;
 		#ifdef WIRE_HAS_STOP_INTERRUPT
-		port.FLT |= I2C_FLT_STOPIE;
+		port().FLT |= I2C_FLT_STOPIE;
 		#else
 		#if defined(WIRE_IMPLEMENT_WIRE) && !defined(WIRE_IMPLEMENT_WIRE1)
 		attachInterrupt(hardware.sda_pin[sda_pin_index], sda_rising_isr0, RISING);
@@ -412,14 +412,14 @@ void TwoWire::isr(void)
 		#endif
 		#endif // WIRE_HAS_STOP_INTERRUPT
 		//digitalWriteFast(4, HIGH);
-		data = port.D;
+		data = port().D;
 		//serial_phex(data);
 		if (rxBufferLength < BUFFER_LENGTH && receiving) {
 			rxBuffer[rxBufferLength++] = data;
 		}
 		//digitalWriteFast(4, LOW);
 	}
-	port.S = I2C_S_IICIF;
+	port().S = I2C_S_IICIF;
 }
 
 
@@ -444,7 +444,7 @@ void sda_rising_isr1(void)
 void TwoWire::sda_rising_isr(void)
 {
 	//digitalWrite(3, HIGH);
-	if (!(port.S & I2C_S_BUSY)) {
+	if (!(port().S & I2C_S_BUSY)) {
 		detachInterrupt(hardware.sda_pin[sda_pin_index]);
 		if (user_onReceive != NULL) {
 			rxBufferIndex = 0;
@@ -505,12 +505,12 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 	uint32_t wait_begin;
 
 	// clear the status flags
-	port.S = I2C_S_IICIF | I2C_S_ARBL;
+	port().S = I2C_S_IICIF | I2C_S_ARBL;
 	// now take control of the bus...
-	if (port.C1 & I2C_C1_MST) {
+	if (port().C1 & I2C_C1_MST) {
 		// we are already the bus master, so send a repeated start
 		//Serial.print("rstart:");
-		port.C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_RSTA | I2C_C1_TX;
+		port().C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_RSTA | I2C_C1_TX;
 	} else {
 		// we are not currently the bus master, so wait for bus ready
 		//Serial.print("busy:");
@@ -519,15 +519,15 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 			//Serial.write('.') ;
 			if (millis() - wait_begin > 15) {
 				// bus stuck busy too long
-				port.C1 = 0;
-				port.C1 = I2C_C1_IICEN;
+				port().C1 = 0;
+				port().C1 = I2C_C1_IICEN;
 				//Serial.println("abort");
 				return 4; // timeout waiting for bus
 			}
 		}
 		// become the bus master in transmit mode (send start)
 		slave_mode = 0;
-		port.C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_TX;
+		port().C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_TX;
 	}
 	// wait until start condition establishes control of the bus
 	wait_begin = millis();
@@ -536,15 +536,15 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 		if ((status & I2C_S_BUSY)) break;
 		//Serial.write('*') ;
 		if (millis() - wait_begin > 4) {
-			port.C1 = 0;
-			port.C1 = I2C_C1_IICEN;
+			port().C1 = 0;
+			port().C1 = I2C_C1_IICEN;
 			//Serial.println("abort2");
 			return 4; // error generating start condition
 		}
 	}
 	// transmit the address and data
 	for (i=0; i < txBufferLength; i++) {
-		port.D = txBuffer[i];
+		port().D = txBuffer[i];
 		//Serial.write('^');
 		wait_begin = millis();
 		while (1) {
@@ -552,26 +552,26 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 			if ((status & I2C_S_IICIF)) break;
 			if (!(status & I2C_S_BUSY)) break;
 			if (millis() - wait_begin > 5) {
-				port.C1 = 0;
-				port.C1 = I2C_C1_IICEN;
+				port().C1 = 0;
+				port().C1 = I2C_C1_IICEN;
 				//Serial.println("abort3");
 				return 4; // clock stretch too long
 			}
 		}
-		port.S = I2C_S_IICIF;
+		port().S = I2C_S_IICIF;
 		//Serial.write('$');
 		status = i2c_status();
 		if ((status & I2C_S_ARBL)) {
 			// we lost bus arbitration to another master
 			// TODO: what is the proper thing to do here??
-			//Serial.printf(" c1=%02X ", port.C1);
-			port.C1 = I2C_C1_IICEN;
+			//Serial.printf(" c1=%02X ", port().C1);
+			port().C1 = I2C_C1_IICEN;
 			ret = 4; // 4:other error
 			break;
 		}
 		if (!(status & I2C_S_BUSY)) {
 			// suddenly lost control of the bus!
-			port.C1 = I2C_C1_IICEN;
+			port().C1 = I2C_C1_IICEN;
 			ret = 4; // 4:other error
 			break;
 		}
@@ -588,7 +588,7 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 	}
 	if (sendStop) {
 		// send the stop condition
-		port.C1 = I2C_C1_IICEN;
+		port().C1 = I2C_C1_IICEN;
 		// TODO: do we wait for this somehow?
 	}
 	transmitting = 0;
@@ -608,25 +608,25 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 	rxBufferLength = 0;
 	//serial_print("requestFrom\n");
 	// clear the status flags
-	port.S = I2C_S_IICIF | I2C_S_ARBL;
+	port().S = I2C_S_IICIF | I2C_S_ARBL;
 	// now take control of the bus...
-	if (port.C1 & I2C_C1_MST) {
+	if (port().C1 & I2C_C1_MST) {
 		// we are already the bus master, so send a repeated start
-		port.C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_RSTA | I2C_C1_TX;
+		port().C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_RSTA | I2C_C1_TX;
 	} else {
 		// we are not currently the bus master, so wait for bus ready
 		wait_begin = millis();
 		while (i2c_status() & I2C_S_BUSY) {
 			if (millis() - wait_begin > 15) {
 				// bus stuck busy too long
-				port.C1 = 0;
-				port.C1 = I2C_C1_IICEN;
+				port().C1 = 0;
+				port().C1 = I2C_C1_IICEN;
 				return 0; // timeout waiting for bus
 			}
 		}
 		// become the bus master in transmit mode (send start)
 		slave_mode = 0;
-		port.C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_TX;
+		port().C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_TX;
 	}
 
 	// wait until start condition establishes control of the bus
@@ -635,81 +635,81 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 		status = i2c_status();
 		if ((status & I2C_S_BUSY)) break;
 		if (millis() - wait_begin > 4) {
-			port.C1 = 0;
-			port.C1 = I2C_C1_IICEN;
+			port().C1 = 0;
+			port().C1 = I2C_C1_IICEN;
 			return 0; // error generating start condition
 		}
 	}
 	// send the address
-	port.D = (address << 1) | 1;
+	port().D = (address << 1) | 1;
 	wait_begin = millis();
-	while (!(port.S & I2C_S_IICIF)) {
+	while (!(port().S & I2C_S_IICIF)) {
 		if (millis() - wait_begin > 5) {
-			port.C1 = 0;
-			port.C1 = I2C_C1_IICEN;
+			port().C1 = 0;
+			port().C1 = I2C_C1_IICEN;
 			return 0; // clock stretch too long (during address)
 		}
 	}
-	port.S = I2C_S_IICIF;
+	port().S = I2C_S_IICIF;
 	status = i2c_status();
 	if ((status & I2C_S_RXAK) || (status & I2C_S_ARBL)) {
 		// the slave device did not acknowledge
 		// or we lost bus arbitration to another master
-		port.C1 = I2C_C1_IICEN;
+		port().C1 = I2C_C1_IICEN;
 		return 0;
 	}
 	if (length == 0) {
 		// TODO: does anybody really do zero length reads?
 		// if so, does this code really work?
-		port.C1 = I2C_C1_IICEN | (sendStop ? 0 : I2C_C1_MST);
+		port().C1 = I2C_C1_IICEN | (sendStop ? 0 : I2C_C1_MST);
 		return 0;
 	} else if (length == 1) {
-		port.C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_TXAK;
+		port().C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_TXAK;
 	} else {
-		port.C1 = I2C_C1_IICEN | I2C_C1_MST;
+		port().C1 = I2C_C1_IICEN | I2C_C1_MST;
 	}
-	tmp = port.D; // initiate the first receive
+	tmp = port().D; // initiate the first receive
 	while (length > 1) {
 		wait_begin = millis();
-		while (!(port.S & I2C_S_IICIF)) {
+		while (!(port().S & I2C_S_IICIF)) {
 			if (millis() - wait_begin > 5) {
-				port.C1 = 0;
-				port.C1 = I2C_C1_IICEN;
+				port().C1 = 0;
+				port().C1 = I2C_C1_IICEN;
 				rxBufferLength = count;
 				return count; // clock stretch too long (during data)
 			}
 		}
-		port.S = I2C_S_IICIF;
+		port().S = I2C_S_IICIF;
 		length--;
-		if (length == 1) port.C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_TXAK;
+		if (length == 1) port().C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_TXAK;
 		if (count < BUFFER_LENGTH) {
-			rxBuffer[count++] = port.D;
+			rxBuffer[count++] = port().D;
 		} else {
-			tmp = port.D;
+			tmp = port().D;
 		}
 	}
 	wait_begin = millis();
-	while (!(port.S & I2C_S_IICIF)) {
+	while (!(port().S & I2C_S_IICIF)) {
 		if (millis() - wait_begin > 5) {
-			port.C1 = 0;
-			port.C1 = I2C_C1_IICEN;
+			port().C1 = 0;
+			port().C1 = I2C_C1_IICEN;
 			rxBufferLength = count;
 			return count; // clock stretch too long (during data)
 		}
 	}
-	port.S = I2C_S_IICIF;
-	port.C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_TX;
+	port().S = I2C_S_IICIF;
+	port().C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_TX;
 	if (count < BUFFER_LENGTH) {
-		rxBuffer[count++] = port.D;
+		rxBuffer[count++] = port().D;
 	} else {
-		tmp = port.D;
+		tmp = port().D;
 	}
-	if (sendStop) port.C1 = I2C_C1_IICEN;
+	if (sendStop) port().C1 = I2C_C1_IICEN;
 	rxBufferLength = count;
 	return count;
 }
 
-const TwoWire::I2C_Hardware_t TwoWire::i2c0_hardware = {
+constexpr TwoWire::I2C_Hardware_t TwoWire::i2c0_hardware = {
 	SIM_SCGC4, SIM_SCGC4_I2C0,
 #if defined(__MKL26Z64__) || defined(__MK20DX128__) || defined(__MK20DX256__)
 	18, 17, 255, 255, 255,
@@ -726,7 +726,7 @@ const TwoWire::I2C_Hardware_t TwoWire::i2c0_hardware = {
 };
 
 #if defined(__MKL26Z64__) || defined(__MK20DX256__) || defined(__MK64FX512__) || defined(__MK66FX1M0__)
-const TwoWire::I2C_Hardware_t TwoWire::i2c1_hardware = {
+constexpr TwoWire::I2C_Hardware_t TwoWire::i2c1_hardware = {
 	SIM_SCGC4, SIM_SCGC4_I2C1,
 #if defined(__MKL26Z64__)
 	23, 255, 255, 255, 255,
@@ -749,7 +749,7 @@ const TwoWire::I2C_Hardware_t TwoWire::i2c1_hardware = {
 #endif
 
 #if defined(__MK64FX512__) || defined(__MK66FX1M0__)
-const TwoWire::I2C_Hardware_t TwoWire::i2c2_hardware = {
+constexpr TwoWire::I2C_Hardware_t TwoWire::i2c2_hardware = {
 	SIM_SCGC1, SIM_SCGC1_I2C2,
 #if defined(__MK64FX512__) || defined(__MK66FX1M0__)
 	4, 255, 255, 255, 255,
@@ -762,7 +762,7 @@ const TwoWire::I2C_Hardware_t TwoWire::i2c2_hardware = {
 #endif
 
 #if defined(__MK66FX1M0__)
-const TwoWire::I2C_Hardware_t TwoWire::i2c3_hardware = {
+constexpr TwoWire::I2C_Hardware_t TwoWire::i2c3_hardware = {
 	SIM_SCGC1, SIM_SCGC1_I2C3,
 #if defined(__MK66FX1M0__)
 	56, 255, 255, 255, 255,
@@ -774,21 +774,29 @@ const TwoWire::I2C_Hardware_t TwoWire::i2c3_hardware = {
 };
 #endif
 
+// Helper to transform a non-constant expression of the form
+// &(*(KINETIS_I2C_t *)0x40066000)
+// into a compile time constant.
+#define MAKE_CONST(x) (__builtin_constant_p(x) ? (x) : (x))
 
 #ifdef WIRE_IMPLEMENT_WIRE
-TwoWire Wire(KINETIS_I2C0, TwoWire::i2c0_hardware);
+constexpr uintptr_t i2c0_addr = uintptr_t(MAKE_CONST(&KINETIS_I2C0));
+TwoWire Wire(i2c0_addr, TwoWire::i2c0_hardware);
 void i2c0_isr(void) { Wire.isr(); }
 #endif
 #ifdef WIRE_IMPLEMENT_WIRE1
-TwoWire Wire1(KINETIS_I2C1, TwoWire::i2c1_hardware);
+constexpr uintptr_t i2c1_addr = uintptr_t(MAKE_CONST(&KINETIS_I2C1));
+TwoWire Wire1(i2c1_addr, TwoWire::i2c1_hardware);
 void i2c1_isr(void) { Wire1.isr(); }
 #endif
 #ifdef WIRE_IMPLEMENT_WIRE2
-TwoWire Wire2(KINETIS_I2C2, TwoWire::i2c2_hardware);
+constexpr uintptr_t i2c2_addr = uintptr_t(MAKE_CONST(&KINETIS_I2C2));
+TwoWire Wire2(i2c2_addr, TwoWire::i2c2_hardware);
 void i2c2_isr(void) { Wire2.isr(); }
 #endif
 #ifdef WIRE_IMPLEMENT_WIRE3
-TwoWire Wire3(KINETIS_I2C3, TwoWire::i2c3_hardware);
+constexpr uintptr_t i2c3_addr = uintptr_t(MAKE_CONST(&KINETIS_I2C3));
+TwoWire Wire3(i2c3_addr, TwoWire::i2c3_hardware);
 void i2c3_isr(void) { Wire3.isr(); }
 #endif
 
