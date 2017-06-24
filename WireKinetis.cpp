@@ -709,6 +709,21 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 	return count;
 }
 
+// for compatibility with examples that directly call this AVR-specific function
+// https://learn.adafruit.com/adafruit-tca9548a-1-to-8-i2c-multiplexer-breakout/wiring-and-test
+// https://forum.pjrc.com/threads/44922-Undefined-reference-to-twi_writeTo
+extern "C"
+uint8_t twi_writeTo(uint8_t address, uint8_t* data, uint8_t length, uint8_t wait, uint8_t sendStop)
+{
+	if (!wait) return 4;
+	Wire.beginTransmission(address);
+	while (length) {
+		Wire.write(*data++);
+		length--;
+	}
+	return Wire.endTransmission(sendStop);
+}
+
 constexpr TwoWire::I2C_Hardware_t TwoWire::i2c0_hardware = {
 	SIM_SCGC4, SIM_SCGC4_I2C0,
 #if defined(__MKL26Z64__) || defined(__MK20DX128__) || defined(__MK20DX256__)
