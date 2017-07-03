@@ -704,6 +704,11 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 	} else {
 		tmp = port().D;
 	}
+#if F_CPU > 120000000
+	__asm__("nop");
+	__asm__("nop");
+	__asm__("nop");
+#endif
 	if (sendStop) port().C1 = I2C_C1_IICEN;
 	rxBufferLength = count;
 	return count;
