@@ -223,7 +223,7 @@ void TwoWire::setClock(uint32_t frequency)
 	} else if (frequency < 1000000) {
 		port().F = 0x07; // 400 kHz
 	} else {
-		port().F = 0x00; // 800 MHz
+		port().F = 0x00; // 800 kHz
 	}
 	port().FLT = 1;
 #elif F_BUS == 8000000
