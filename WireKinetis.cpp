@@ -498,6 +498,52 @@ size_t TwoWire::write(const uint8_t *data, size_t quantity)
 	return 0;
 }
 
+bool TwoWire::wait_idle(void)
+{
+	bool reset=false;
+	uint32_t wait_begin = millis();
+
+	//Serial.print("busy:");
+	while (i2c_status() & I2C_S_BUSY) {
+		//Serial.write('.') ;
+		uint32_t waited = millis() - wait_begin;
+#if 1
+		if (waited > 15 && !reset) {
+			reset = true;
+			//Serial.println("attempt forced reset");
+			uint8_t sda_pin = hardware.sda_pin[sda_pin_index];
+			pinMode(sda_pin, INPUT_DISABLE);
+			uint8_t scl_pin = hardware.scl_pin[sda_pin_index];
+			pinMode(scl_pin, OUTPUT);
+			for (int i=0; i < 9; i++) {
+				digitalWrite(scl_pin, LOW);
+				delayMicroseconds(5);
+				digitalWrite(scl_pin, HIGH);
+				delayMicroseconds(5);
+			}
+			uint32_t mux;
+			volatile uint32_t *reg;
+			reg = portConfigRegister(hardware.sda_pin[sda_pin_index]);
+			mux = PORT_PCR_MUX(hardware.sda_mux[sda_pin_index]);
+			*reg = mux|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+			reg = portConfigRegister(hardware.scl_pin[scl_pin_index]);
+			mux = PORT_PCR_MUX(hardware.scl_mux[scl_pin_index]);
+			*reg = mux|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_DSE;
+			delayMicroseconds(10);
+			continue;
+		}
+#endif
+		if (waited > 16) {
+			// bus stuck busy too long
+			port().C1 = 0;
+			port().C1 = I2C_C1_IICEN;
+			//Serial.println("abort");
+			//return 4; // timeout waiting for bus
+			return false;
+		}
+	}
+	return true;
+}
 
 uint8_t TwoWire::endTransmission(uint8_t sendStop)
 {
@@ -513,17 +559,9 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 		port().C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_RSTA | I2C_C1_TX;
 	} else {
 		// we are not currently the bus master, so wait for bus ready
-		//Serial.print("busy:");
-		wait_begin = millis();
-		while (i2c_status() & I2C_S_BUSY) {
-			//Serial.write('.') ;
-			if (millis() - wait_begin > 15) {
-				// bus stuck busy too long
-				port().C1 = 0;
-				port().C1 = I2C_C1_IICEN;
-				//Serial.println("abort");
-				return 4; // timeout waiting for bus
-			}
+		if (!wait_idle()) {
+			//Serial.printf("endTransmission err1\n");
+			return 4; // timeout waiting for bus
 		}
 		// become the bus master in transmit mode (send start)
 		slave_mode = 0;
@@ -539,6 +577,7 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 			port().C1 = 0;
 			port().C1 = I2C_C1_IICEN;
 			//Serial.println("abort2");
+			//Serial.printf("endTransmission err2\n");
 			return 4; // error generating start condition
 		}
 	}
@@ -555,6 +594,7 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 				port().C1 = 0;
 				port().C1 = I2C_C1_IICEN;
 				//Serial.println("abort3");
+				//Serial.printf("endTransmission err3\n");
 				return 4; // clock stretch too long
 			}
 		}
@@ -566,20 +606,24 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 			// TODO: what is the proper thing to do here??
 			//Serial.printf(" c1=%02X ", port().C1);
 			port().C1 = I2C_C1_IICEN;
+			//Serial.printf("endTransmission err4\n");
 			ret = 4; // 4:other error
 			break;
 		}
 		if (!(status & I2C_S_BUSY)) {
 			// suddenly lost control of the bus!
 			port().C1 = I2C_C1_IICEN;
+			//Serial.printf("endTransmission err5\n");
 			ret = 4; // 4:other error
 			break;
 		}
 		if (status & I2C_S_RXAK) {
 			// the slave device did not acknowledge
 			if (i == 0) {
+				//Serial.printf("endTransmission err6\n");
 				ret = 2; // 2:received NACK on transmit of address
 			} else {
+				//Serial.printf("endTransmission err7\n");
 				ret = 3; // 3:received NACK on transmit of data 
 			}
 			sendStop = 1;
@@ -615,14 +659,9 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 		port().C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_RSTA | I2C_C1_TX;
 	} else {
 		// we are not currently the bus master, so wait for bus ready
-		wait_begin = millis();
-		while (i2c_status() & I2C_S_BUSY) {
-			if (millis() - wait_begin > 15) {
-				// bus stuck busy too long
-				port().C1 = 0;
-				port().C1 = I2C_C1_IICEN;
-				return 0; // timeout waiting for bus
-			}
+		if (!wait_idle()) {
+			//Serial.printf("requestFrom err1\n");
+			return 0; // timeout waiting for bus
 		}
 		// become the bus master in transmit mode (send start)
 		slave_mode = 0;
@@ -637,6 +676,7 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 		if (millis() - wait_begin > 4) {
 			port().C1 = 0;
 			port().C1 = I2C_C1_IICEN;
+			//Serial.printf("requestFrom err2\n");
 			return 0; // error generating start condition
 		}
 	}
@@ -647,6 +687,7 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 		if (millis() - wait_begin > 5) {
 			port().C1 = 0;
 			port().C1 = I2C_C1_IICEN;
+			//Serial.printf("requestFrom err3\n");
 			return 0; // clock stretch too long (during address)
 		}
 	}
@@ -656,12 +697,14 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 		// the slave device did not acknowledge
 		// or we lost bus arbitration to another master
 		port().C1 = I2C_C1_IICEN;
+		//Serial.printf("requestFrom err4\n");
 		return 0;
 	}
 	if (length == 0) {
 		// TODO: does anybody really do zero length reads?
 		// if so, does this code really work?
 		port().C1 = I2C_C1_IICEN | (sendStop ? 0 : I2C_C1_MST);
+		//Serial.printf("requestFrom err5\n");
 		return 0;
 	} else if (length == 1) {
 		port().C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_TXAK;
@@ -669,6 +712,7 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 		port().C1 = I2C_C1_IICEN | I2C_C1_MST;
 	}
 	tmp = port().D; // initiate the first receive
+	//delayMicroseconds(250);
 	while (length > 1) {
 		wait_begin = millis();
 		while (!(port().S & I2C_S_IICIF)) {
@@ -676,10 +720,26 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 				port().C1 = 0;
 				port().C1 = I2C_C1_IICEN;
 				rxBufferLength = count;
+				//Serial.printf("requestFrom err6\n");
 				return count; // clock stretch too long (during data)
 			}
 		}
 		port().S = I2C_S_IICIF;
+		status = port().S;
+		if ((status & I2C_S_ARBL)) {
+			// we lost bus arbitration to another master
+			// or suddenly lost control of the bus!
+			// TODO: what is the proper thing to do here??
+			//Serial.printf("requestFrom err7a\n");
+			return count;
+		}
+		if (!(status & I2C_S_BUSY)) {
+			// we lost bus arbitration to another master
+			// or suddenly lost control of the bus!
+			// TODO: what is the proper thing to do here??
+			//Serial.printf("requestFrom err7b\n");
+			return count;
+		}
 		length--;
 		if (length == 1) port().C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_TXAK;
 		if (count < BUFFER_LENGTH) {
@@ -694,10 +754,30 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 			port().C1 = 0;
 			port().C1 = I2C_C1_IICEN;
 			rxBufferLength = count;
+			//Serial.printf("requestFrom err8\n");
 			return count; // clock stretch too long (during data)
 		}
 	}
 	port().S = I2C_S_IICIF;
+	status = port().S;
+	if ((status & I2C_S_ARBL)) {
+		// we lost bus arbitration to another master
+		// or suddenly lost control of the bus!
+		// TODO: what is the proper thing to do here??
+		//digitalWriteFast(13, HIGH);
+		port().S = I2C_S_ARBL;
+		delayMicroseconds(5);
+		port().C1 &= ~I2C_C1_TXAK;
+		//Serial.printf("requestFrom err9a\n");
+		return count;
+	}
+	if (!(status & I2C_S_BUSY)) {
+		// we lost bus arbitration to another master
+		// or suddenly lost control of the bus!
+		// TODO: what is the proper thing to do here??
+		//Serial.printf("requestFrom err9b\n");
+		return count;
+	}
 	port().C1 = I2C_C1_IICEN | I2C_C1_MST | I2C_C1_TX;
 	if (count < BUFFER_LENGTH) {
 		rxBuffer[count++] = port().D;

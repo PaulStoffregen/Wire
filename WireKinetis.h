@@ -184,6 +184,7 @@ private:
 		return port().S;
 	}
 	void isr(void);
+	bool wait_idle(void);
 	uintptr_t port_addr;
 	const I2C_Hardware_t &hardware;
 	uint8_t rxBuffer[BUFFER_LENGTH] = {};
