@@ -24,6 +24,7 @@
  * THE SOFTWARE.
  */
 
+#include <Arduino.h>
 #include "Wire.h"
 
 #if defined(__arm__) && defined(TEENSYDUINO)
@@ -91,7 +92,16 @@ void TwoWire::setClock(uint32_t frequency)
 {
 	if (!(hardware.clock_gate_register & hardware.clock_gate_mask)) return;
 
-#if F_BUS == 120000000
+#if F_BUS == 128000000
+	if (frequency < 400000) {
+		port().F = I2C_F_DIV1280; // 100 kHz
+	} else if (frequency < 1000000) {
+		port().F = I2C_F_DIV320; // 400 kHz
+	} else {
+		port().F = I2C_F_DIV128; // 1 MHz
+	}
+	port().FLT = 4;
+#elif F_BUS == 120000000
 	if (frequency < 400000) {
 		port().F = I2C_F_DIV1152; // 104 kHz
 	} else if (frequency < 1000000) {
@@ -244,7 +254,7 @@ void TwoWire::setClock(uint32_t frequency)
 	port().F = 0x00; // 100 kHz
 	port().FLT = 1;
 #else
-#error "F_BUS must be 120, 108, 96, 90, 80, 72, 64, 60, 56, 54, 48, 40, 36, 24, 16, 8, 4 or 2 MHz"
+#error "F_BUS must be 128, 120, 108, 96, 90, 80, 72, 64, 60, 56, 54, 48, 40, 36, 24, 16, 8, 4 or 2 MHz"
 #endif
 }
 
