@@ -28,7 +28,7 @@
 #elif defined(__AVR__)
 
 #include <inttypes.h>
-#include "Arduino.h"
+#include <Arduino.h>
 
 #define BUFFER_LENGTH 32
 #define WIRE_HAS_END 1

@@ -19,6 +19,8 @@
   Modified 2012 by Todd Krein (todd@krein.org) to implement repeated starts
 */
 
+#include <Arduino.h>
+
 #if defined(__AVR__)
 
 #include "Wire.h"
