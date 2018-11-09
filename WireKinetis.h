@@ -29,8 +29,8 @@
 
 #if defined(__arm__) && defined(TEENSYDUINO)
 
-#include <inttypes.h>
-#include "Arduino.h"
+#include <Arduino.h>
+#include <stdint.h>
 
 #define BUFFER_LENGTH 32
 #define WIRE_HAS_END 1
@@ -232,7 +232,9 @@ public:
 	inline TWBRemulation & operator = (int val) __attribute__((always_inline)) {
 		if (val == 12 || val == ((F_CPU / 400000) - 16) / 2) { // 22, 52, 112
 			I2C0_C1 = 0;
-			#if F_BUS == 120000000
+			#if F_BUS == 128000000
+			I2C0_F = I2C_F_DIV320; // 400 kHz
+			#elif F_BUS == 120000000
 			I2C0_F = I2C_F_DIV288; // 416 kHz
 			#elif F_BUS == 108000000
 			I2C0_F = I2C_F_DIV256; // 422 kHz
@@ -272,7 +274,9 @@ public:
 			I2C0_C1 = I2C_C1_IICEN;
 		} else if (val == 72 || val == ((F_CPU / 100000) - 16) / 2) { // 112, 232, 472
 			I2C0_C1 = 0;
-			#if F_BUS == 120000000
+			#if F_BUS == 128000000
+			I2C0_F = I2C_F_DIV1280; // 100 kHz
+			#elif F_BUS == 120000000
 			I2C0_F = I2C_F_DIV1152; // 104 kHz
 			#elif F_BUS == 108000000
 			I2C0_F = I2C_F_DIV1024; // 105 kHz
@@ -314,7 +318,9 @@ public:
 		return *this;
 	}
 	inline operator int () const __attribute__((always_inline)) {
-		#if F_BUS == 120000000
+		#if F_BUS == 128000000
+		if (I2C0_F == I2C_F_DIV320) return 12;
+		#elif F_BUS == 120000000
 		if (I2C0_F == I2C_F_DIV288) return 12;
 		#elif F_BUS == 108000000
 		if (I2C0_F == I2C_F_DIV256) return 12;
