@@ -22,7 +22,10 @@
 #ifndef TwoWire_h
 #define TwoWire_h
 
-#if defined(__arm__) && defined(TEENSYDUINO)
+#if defined(__IMXRT1052__) || defined(__IMXRT1062__)
+#include "WireIMXRT.h"
+
+#elif defined(__arm__) && defined(TEENSYDUINO)
 #include "WireKinetis.h"
 
 #elif defined(__AVR__)
