@@ -42,19 +42,25 @@ public:
 	typedef struct {
 		volatile uint32_t &clock_gate_register;
 		uint32_t clock_gate_mask;
-		uint8_t  sda_pin[5];
-		uint8_t  sda_mux[5];
-		uint8_t  scl_pin[5];
-		uint8_t  scl_mux[5];
+		volatile uint32_t &sda_mux_register;
+		volatile uint32_t &scl_mux_register;
+		volatile uint32_t &sda_pad_register;
+		volatile uint32_t &scl_pad_register;
+		volatile uint32_t &sda_input_register;
+		volatile uint32_t &scl_input_register;
+		uint8_t sda_mux_value;
+		uint8_t scl_mux_value;
+		uint8_t sda_input_value;
+		uint8_t scl_input_value;
 		IRQ_NUMBER_t irq;
 	} I2C_Hardware_t;
-	static const I2C_Hardware_t i2c0_hardware;
 	static const I2C_Hardware_t i2c1_hardware;
 	static const I2C_Hardware_t i2c2_hardware;
 	static const I2C_Hardware_t i2c3_hardware;
+	static const I2C_Hardware_t i2c4_hardware;
 public:
-	constexpr TwoWire(uintptr_t port_addr, const I2C_Hardware_t &myhardware)
-		: port_addr(port_addr), hardware(myhardware) {
+	constexpr TwoWire(IMXRT_LPI2C_t *myport, const I2C_Hardware_t &myhardware)
+		: port(myport), hardware(myhardware) {
 	}
 	void begin();
 	void begin(uint8_t address);
@@ -63,8 +69,10 @@ public:
 	}
 	void end();
 	void setClock(uint32_t frequency);
-	void setSDA(uint8_t pin);
-	void setSCL(uint8_t pin);
+	void setSDA(uint8_t pin) {
+	}
+	void setSCL(uint8_t pin) {
+	}
 	void beginTransmission(uint8_t address) {
 		txBuffer[0] = (address << 1);
 		transmitting = 1;
@@ -141,14 +149,9 @@ public:
 	}
 	using Print::write;
 private:
-	//IMXRT_LPI2C_t & port() { return (*(IMXRT_LPI2C_t *) port_addr); }
-	uint8_t i2c_status(void) {
-		//return port().S;
-		return 0;
-	}
-	void isr(void);
-	bool wait_idle(void);
-	uintptr_t port_addr;
+	//void isr(void);
+	//bool wait_idle(void);
+	IMXRT_LPI2C_t * const port;
 	const I2C_Hardware_t &hardware;
 	uint8_t rxBuffer[BUFFER_LENGTH] = {};
 	uint8_t rxBufferIndex = 0;
