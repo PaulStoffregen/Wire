@@ -33,7 +33,7 @@
 #include <stdint.h>
 
 #define BUFFER_LENGTH 32
-#define WIRE_HAS_END 1
+//#define WIRE_HAS_END 1
 
 class TwoWire : public Stream
 {

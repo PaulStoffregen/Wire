@@ -81,25 +81,28 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 	// wait while bus is busy
 	while (1) {
 		status = LPI2C1_MSR; // pg 2899 & 2892
-		if (!(LPI2C1_MSR & LPI2C_MSR_BBF)) break; // bus is available
-		if (LPI2C1_MSR & LPI2C_MSR_MBF) break; // we already have bus control
+		if (!(status & LPI2C_MSR_BBF)) break; // bus is available
+		if (status & LPI2C_MSR_MBF) break; // we already have bus control
 		// TODO: timeout...
 	}
-	printf("idle\n");
+	//printf("m=%x\n", status);
 
 	// TODO: is this correct if the prior use didn't send stop?
-	LPI2C1_MSR = LPI2C_MSR_PLTF | LPI2C_MSR_ALF | LPI2C_MSR_NDF | LPI2C_MSR_SDF; // clear flags
+	//LPI2C1_MSR = LPI2C_MSR_PLTF | LPI2C_MSR_ALF | LPI2C_MSR_NDF | LPI2C_MSR_SDF; // clear flags
+	LPI2C1_MSR = status;
 
-	printf("MSR=%lX, MFSR=%lX\n", status, LPI2C1_MFSR);
+	//printf("MSR=%lX, MFSR=%lX\n", status, LPI2C1_MFSR);
+	//elapsedMillis timeout=0;
 
 	while (1) {
 		// transmit stuff, if we haven't already
 		if (i <= len) {
 			uint32_t fifo_used = LPI2C1_MFSR & 0x07; // pg 2914
-			if (fifo_used < 4) printf("t=%ld\n", fifo_used);
+			//if (fifo_used < 4) printf("t=%ld\n", fifo_used);
 			while (fifo_used < 4) {
 				if (i == 0) {
-					LPI2C1_MTDR = LPI2C_MTDR_CMD_START | (txBuffer[0] << 1);
+					//printf("start %x\n", txBuffer[0]);
+					LPI2C1_MTDR = LPI2C_MTDR_CMD_START | txBuffer[0];
 					i = 1;
 				} else if (i < len) {
 					LPI2C1_MTDR = LPI2C_MTDR_CMD_TRANSMIT | txBuffer[i++];
@@ -114,13 +117,13 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 		// monitor status
 		status = LPI2C1_MSR; // pg 2899 & 2892
 		if (status & LPI2C_MSR_ALF) {
-			printf("arbitration lost\n");
+			//printf("arbitration lost\n");
 			return 4; // we lost bus arbitration to another master
 		}
 		if (status & LPI2C_MSR_NDF) {
-			printf("got NACK, fifo=%ld, i=%ld\n", LPI2C1_MFSR & 0x07, i);
+			//printf("NACK, f=%d, i=%d\n", LPI2C1_MFSR & 0x07, i);
 			// TODO: check that hardware really sends stop automatically
-			// TODO: do we need to clear the FIFO here?
+			LPI2C1_MCR = LPI2C_MCR_MEN | LPI2C_MCR_RTF;  // clear the FIFO
 			return 2; // NACK for address
 			//return 3; // NACK for data TODO: how to discern addr from data?
 		}
@@ -128,16 +131,26 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 			//printf("bus stuck - what to do?\n");
 			//return 4;
 		//}
+
+		//if (timeout > 100) {
+			//printf("status = %x\n", status);
+			//timeout = 0;
+		//}
+
 		if (sendStop) {
-			if (status & LPI2C_MSR_SDF) return 0;
+			if (status & LPI2C_MSR_SDF) {
+				//printf("stop sent, msr=%x\n", status);
+				return 0;
+			}
 		} else {
 			uint32_t fifo_used = LPI2C1_MFSR & 0x07; // pg 2914
 			if (fifo_used == 0) {
 				//digitalWriteFast(15, HIGH);
 				//delayMicroseconds(2);
 				//digitalWriteFast(15, LOW);
-				// TODO: this return before the data transmits!
+				// TODO: this returns before the last data transmits!
 				// Should verify every byte ACKs, arbitration not lost
+				//printf("fifo empty, msr=%x\n", status);
 				return 0;
 			}
 		}
@@ -147,16 +160,15 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 {
 	uint32_t cmd=0, status, fifo;
-	// TODO: sendStop is currently ignored
 
 	// wait while bus is busy
 	while (1) {
 		status = LPI2C1_MSR; // pg 2899 & 2892
-		if (!(LPI2C1_MSR & LPI2C_MSR_BBF)) break; // bus is available
-		if (LPI2C1_MSR & LPI2C_MSR_MBF) break; // we already have bus control
+		if (!(status & LPI2C_MSR_BBF)) break; // bus is available
+		if (status & LPI2C_MSR_MBF) break; // we already have bus control
 		// TODO: timeout...
 	}
-	printf("idle\n");
+	//printf("idle2, msr=%x\n", status);
 
 	// TODO: is this correct if the prior use didn't send stop?
 	LPI2C1_MSR = LPI2C_MSR_PLTF | LPI2C_MSR_ALF | LPI2C_MSR_NDF | LPI2C_MSR_SDF; // clear flags
@@ -168,11 +180,13 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 	rxBufferIndex = 0;
 	rxBufferLength = 0;
 
+	//elapsedMillis timeout=0;
+
 	while (1) {
 		// transmit stuff, if we haven't already
 		if (cmd < 3) {
 			fifo = LPI2C1_MFSR & 0x07; // pg 2914
-			if (fifo < 4) printf("t=%ld\n", fifo);
+			//if (fifo < 4) printf("t=%ld\n", fifo);
 			while (fifo < 4 && cmd < 3) {
 				if (cmd == 0) {
 					LPI2C1_MTDR = LPI2C_MTDR_CMD_START | 1 | address;
@@ -199,14 +213,20 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 		// monitor status
 		status = LPI2C1_MSR; // pg 2899 & 2892
 		if (status & LPI2C_MSR_ALF) {
-			printf("arbitration lost\n");
+			//printf("arbitration lost\n");
 			break;
 		}
 		if (status & LPI2C_MSR_NDF) {
-			printf("got NACK\n");
+			//printf("got NACK\n");
 			// TODO: how to make sure stop is sent?
 			break;
 		}
+
+		//if (timeout > 250) {
+			//printf("Status = %x\n", status);
+			//timeout = 0;
+		//}
+
 		if (rxBufferLength >= length && cmd >= 3) break;
 	}
 	//digitalWriteFast(15, HIGH);
