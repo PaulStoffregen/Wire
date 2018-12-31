@@ -111,6 +111,8 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 			//printf("NACK, f=%d, i=%d\n", port->MFSR & 0x07, i);
 			// TODO: check that hardware really sends stop automatically
 			port->MCR = LPI2C_MCR_MEN | LPI2C_MCR_RTF;  // clear the FIFO
+			// TODO: is always sending a stop the right way to recover?
+			port->MTDR = LPI2C_MTDR_CMD_STOP;
 			return 2; // NACK for address
 			//return 3; // NACK for data TODO: how to discern addr from data?
 		}
@@ -126,8 +128,11 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 
 		if (sendStop) {
 			if (status & LPI2C_MSR_SDF) {
-				//printf("stop sent, msr=%x\n", status);
-				return 0;
+				// master automatically sends stop condition on some
+				// types of errors, so this flag only means success
+				// when all comments in fifo have been fully used
+				uint32_t fifo = port->MFSR & 0x07;
+				if (fifo == 0) return 0;
 			}
 		} else {
 			uint32_t fifo_used = port->MFSR & 0x07; // pg 2914
