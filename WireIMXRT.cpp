@@ -288,55 +288,31 @@ TwoWire Wire2(&IMXRT_LPI2C4, TwoWire::i2c4_hardware);
 
 void TwoWire::setClock(uint32_t frequency)
 {
-        // timing params, pg 2363
-//SETHOLD: 2-63 
-//CLKLO: 3-63  clock low time
-//CLKHI: 1-63  clock high time
-//DATAVD:
-#if 0
-        // 100 kHz using 24 MHz clock
-        DIV = 2; 
-        FILT = 5;  // filt 2.5
-        CLOCK_PERIOD = (24 MHz / 100 kHz) / DIV = 120;
-        RISETIME = 1; // depends on resistors
-        LATENCY = (2 + FILT + RISETIME) / DIV = 4
-        PRESCALE = log2(DIV) = 1; // div by 2
-        CLKLO = CLOCK_PERIOD/2 - 1 = 59
-        CLKHI = CLOCK_PERIOD/2 - LATENCY - 1 = 55
-        DATAVD = CLKLO/3 - LATENCY = 15  // guesswork on /3
-        SETHOLD = ??? = 36
-
-        // 400 kHz using 24 MHz clock
-        DIV = 1;
-        FILT = 2;
-        CLOCK_PERIOD = (24 MHz / 400 kHz) / DIV = 60
-        RISETIME = 1; // depends on resistors
-        LATENCY = (2 + FILT + RISETIME) / DIV = 3
-        PRESCALE = log2(DIV) = 0
-        CLKLO = CLOCK_PERIOD/2 - 1 = 29
-        CLKHI = CLOCK_PERIOD/2 - LATENCY - 1 = 26
-        DATAVD = CLKLO/3 - LATENCY = 7  // guesswork
-        SETHOLD = ??? = 21
-
-        // 1 MHz
-        DIV = 1;
-        FILT = 1;
-        CLOCK_PERIOD = (24 MHz / 1 MHz) / DIV = 24
-        RISETIME = 1; // depends on resistors
-        LATENCY = (2 + FILT + RISETIME) / DIV = 2
-        PRESCALE = log2(DIV) = 0
-        CLKLO = CLOCK_PERIOD/2 - 1 = 29
-        CLKHI = CLOCK_PERIOD/2 - LATENCY - 1 = 27
-        DATAVD = CLKLO/3 - LATENCY = 7  // guesswork
-        SETHOLD = ??? = 22
-#endif
         port->MCR = 0;
-        port->MCCR0 = LPI2C_MCCR0_CLKHI(55) | LPI2C_MCCR0_CLKLO(59) |
-                LPI2C_MCCR0_DATAVD(25) | LPI2C_MCCR0_SETHOLD(40);
+	if (frequency < 400000) {
+		// 100 kHz
+		port->MCCR0 = LPI2C_MCCR0_CLKHI(55) | LPI2C_MCCR0_CLKLO(59) |
+			LPI2C_MCCR0_DATAVD(25) | LPI2C_MCCR0_SETHOLD(40);
+		port->MCFGR1 = LPI2C_MCFGR1_PRESCALE(1);
+		port->MCFGR2 = LPI2C_MCFGR2_FILTSDA(5) | LPI2C_MCFGR2_FILTSCL(5) |
+			LPI2C_MCFGR2_BUSIDLE(3900);
+	} else if (frequency < 1000000) {
+		// 400 kHz
+		port->MCCR0 = LPI2C_MCCR0_CLKHI(26) | LPI2C_MCCR0_CLKLO(28) |
+			LPI2C_MCCR0_DATAVD(12) | LPI2C_MCCR0_SETHOLD(18);
+		port->MCFGR1 = LPI2C_MCFGR1_PRESCALE(0);
+		port->MCFGR2 = LPI2C_MCFGR2_FILTSDA(2) | LPI2C_MCFGR2_FILTSCL(2) |
+			LPI2C_MCFGR2_BUSIDLE(3900);
+	} else {
+		// 1 MHz
+		port->MCCR0 = LPI2C_MCCR0_CLKHI(9) | LPI2C_MCCR0_CLKLO(10) |
+			LPI2C_MCCR0_DATAVD(4) | LPI2C_MCCR0_SETHOLD(7);
+		port->MCFGR1 = LPI2C_MCFGR1_PRESCALE(0);
+		port->MCFGR2 = LPI2C_MCFGR2_FILTSDA(1) | LPI2C_MCFGR2_FILTSCL(1) |
+			LPI2C_MCFGR2_BUSIDLE(3900);
+	}
         port->MCCR1 = port->MCCR0;
         port->MCFGR0 = 0;
-        port->MCFGR1 = /*LPI2C_MCFGR1_TIMECFG |*/ LPI2C_MCFGR1_PRESCALE(1);
-        port->MCFGR2 = LPI2C_MCFGR2_FILTSDA(5) | LPI2C_MCFGR2_FILTSCL(5) | LPI2C_MCFGR2_BUSIDLE(3900);
         port->MCFGR3 = LPI2C_MCFGR3_PINLOW(3900);
         port->MFCR = LPI2C_MFCR_RXWATER(1) | LPI2C_MFCR_TXWATER(1);
         port->MCR = LPI2C_MCR_MEN;
