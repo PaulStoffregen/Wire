@@ -27,7 +27,7 @@
 #include <Arduino.h>
 #include "Wire.h"
 
-#if defined(__arm__) && defined(TEENSYDUINO) && (defined(KINETISK) || defined(KINETISL))
+#if defined(__arm__) && defined(TEENSYDUINO) && (defined(__MKL26Z64__) || defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MK64FX512__) || defined(__MK66FX1M0__))
 
 #include "kinetis.h"
 #include <string.h> // for memcpy
