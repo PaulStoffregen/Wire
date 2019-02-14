@@ -130,8 +130,8 @@ void printKnownChips(byte address)
     case 0x41: Serial.print(F("STMPE610,PCA9685")); break;
     case 0x42: Serial.print(F("PCA9685")); break;
     case 0x43: Serial.print(F("PCA9685")); break;
-    case 0x44: Serial.print(F("PCA9685")); break;
-    case 0x45: Serial.print(F("PCA9685")); break;
+    case 0x44: Serial.print(F("PCA9685, SHT3X")); break;
+    case 0x45: Serial.print(F("PCA9685, SHT3X")); break;
     case 0x46: Serial.print(F("PCA9685")); break;
     case 0x47: Serial.print(F("PCA9685")); break;
     case 0x48: Serial.print(F("ADS1115,PN532,TMP102,PCF8591")); break;
