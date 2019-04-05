@@ -122,6 +122,9 @@ void printKnownChips(byte address)
     case 0x2D: Serial.print(F("MCP44XX ePot")); break;
     case 0x2E: Serial.print(F("MCP44XX ePot")); break;
     case 0x2F: Serial.print(F("MCP44XX ePot")); break;
+    case 0x33: Serial.print(F("MAX11614,MAX11615")); break;
+    case 0x34: Serial.print(F("MAX11612,MAX11613")); break;
+    case 0x35: Serial.print(F("MAX11616,MAX11617")); break;
     case 0x38: Serial.print(F("RA8875,FT6206")); break;
     case 0x39: Serial.print(F("TSL2561")); break;
     case 0x3C: Serial.print(F("SSD1306,DigisparkOLED")); break;
