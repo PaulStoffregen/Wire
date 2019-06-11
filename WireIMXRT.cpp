@@ -227,7 +227,22 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 	return rxBufferLength;
 }
 
-
+uint8_t TwoWire::requestFrom(uint8_t addr, uint8_t qty, uint32_t iaddr, uint8_t n, uint8_t stop)
+{
+	if (n > 0) {
+		union { uint32_t ul; uint8_t b[4]; } iaddress;
+		iaddress.ul = iaddr;
+		beginTransmission(addr);
+		if (n > 3) n = 3;
+		do {
+			n = n - 1;
+			write(iaddress.b[n]);
+		} while (n > 0);
+		endTransmission(false);
+	}
+	if (qty > BUFFER_LENGTH) qty = BUFFER_LENGTH;
+	return requestFrom(addr, qty, stop);
+}
 
 
 
