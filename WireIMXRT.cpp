@@ -9,16 +9,24 @@
 void TwoWire::begin(void)
 {
         // use 24 MHz clock
-        CCM_CSCDR2 = (CCM_CSCDR2 & ~CCM_CSCDR2_LPI2C_CLK_PODF(63)) | CCM_CSCDR2_LPI2C_CLK_SEL;
+    CCM_CSCDR2 = (CCM_CSCDR2 & ~CCM_CSCDR2_LPI2C_CLK_PODF(63)) | CCM_CSCDR2_LPI2C_CLK_SEL;
 	hardware.clock_gate_register |= hardware.clock_gate_mask;
-        port->MCR = LPI2C_MCR_RST;
-        setClock(100000);
-	hardware.sda_mux_register = hardware.sda_mux_value;
-	hardware.scl_mux_register = hardware.scl_mux_value;
-	hardware.sda_input_register = hardware.sda_input_value;
-	hardware.scl_input_register = hardware.scl_input_value;
-	hardware.sda_pad_register |= IOMUXC_PAD_PKE | IOMUXC_PAD_PUE | IOMUXC_PAD_PUS(3);
-	hardware.scl_pad_register |= IOMUXC_PAD_PKE | IOMUXC_PAD_PUE | IOMUXC_PAD_PUS(3);
+    port->MCR = LPI2C_MCR_RST;
+    setClock(100000);
+
+    // Setup SDA register
+	*(portControlRegister(hardware.sda_pins[sda_pin_index_].pin)) |= IOMUXC_PAD_PKE | IOMUXC_PAD_PUE | IOMUXC_PAD_PUS(3);
+	*(portConfigRegister(hardware.sda_pins[sda_pin_index_].pin)) = hardware.sda_pins[sda_pin_index_].mux_val;
+	if (hardware.sda_pins[sda_pin_index_].select_input_register) {
+	 	*(hardware.sda_pins[sda_pin_index_].select_input_register) =  hardware.sda_pins[sda_pin_index_].select_val;		
+	}	
+
+	// setup SCL register
+	*(portControlRegister(hardware.scl_pins[scl_pin_index_].pin)) |= IOMUXC_PAD_PKE | IOMUXC_PAD_PUE | IOMUXC_PAD_PUS(3);
+	*(portConfigRegister(hardware.scl_pins[scl_pin_index_].pin)) = hardware.scl_pins[scl_pin_index_].mux_val;
+	if (hardware.scl_pins[scl_pin_index_].select_input_register) {
+	 	*(hardware.scl_pins[scl_pin_index_].select_input_register) =  hardware.scl_pins[scl_pin_index_].select_val;		
+	}	
 }
 
 void TwoWire::begin(uint8_t address)
@@ -28,6 +36,54 @@ void TwoWire::begin(uint8_t address)
 
 void TwoWire::end()
 {
+}
+
+void TwoWire::setSDA(uint8_t pin) {
+	if (pin == hardware.sda_pins[sda_pin_index_].pin) return;
+	uint32_t newindex=0;
+	while (1) {
+		uint32_t sda_pin = hardware.sda_pins[newindex].pin;
+		if (sda_pin == 255) return;
+		if (sda_pin == pin) break;
+		if (++newindex >= sizeof(hardware.sda_pins)) return;
+	}
+	if ((hardware.clock_gate_register & hardware.clock_gate_mask)) {
+		*(portConfigRegister(hardware.sda_pins[sda_pin_index_].pin)) = 5;	// hard to know what to go back to?
+
+		// setup new one...
+		*(portControlRegister(hardware.sda_pins[newindex].pin)) |= IOMUXC_PAD_PKE | IOMUXC_PAD_PUE | IOMUXC_PAD_PUS(3);
+		*(portConfigRegister(hardware.sda_pins[newindex].pin)) = hardware.sda_pins[newindex].mux_val;
+		if (hardware.sda_pins[newindex].select_input_register) {
+		 	*(hardware.sda_pins[newindex].select_input_register) =  hardware.sda_pins[newindex].select_val;		
+		}	
+
+	}
+	sda_pin_index_ = newindex;
+
+}
+
+void TwoWire::setSCL(uint8_t pin) {
+	if (pin == hardware.scl_pins[scl_pin_index_].pin) return;
+	uint32_t newindex=0;
+	while (1) {
+		uint32_t scl_pin = hardware.scl_pins[newindex].pin;
+		if (scl_pin == 255) return;
+		if (scl_pin == pin) break;
+		if (++newindex >= sizeof(hardware.scl_pins)) return;
+	}
+	if ((hardware.clock_gate_register & hardware.clock_gate_mask)) {
+		*(portConfigRegister(hardware.scl_pins[scl_pin_index_].pin)) = 5;	// hard to know what to go back to?
+
+		// setup new one...
+		*(portControlRegister(hardware.scl_pins[newindex].pin)) |= IOMUXC_PAD_PKE | IOMUXC_PAD_PUE | IOMUXC_PAD_PUS(3);
+		*(portConfigRegister(hardware.scl_pins[newindex].pin)) = hardware.scl_pins[newindex].mux_val;
+		if (hardware.scl_pins[newindex].select_input_register) {
+		 	*(hardware.scl_pins[newindex].select_input_register) =  hardware.scl_pins[newindex].select_val;		
+		}	
+
+	}
+	scl_pin_index_ = newindex;
+
 }
 
 size_t TwoWire::write(uint8_t data)
@@ -249,16 +305,8 @@ uint8_t TwoWire::requestFrom(uint8_t addr, uint8_t qty, uint32_t iaddr, uint8_t 
 PROGMEM
 constexpr TwoWire::I2C_Hardware_t TwoWire::i2c1_hardware = {
         CCM_CCGR2, CCM_CCGR2_LPI2C1(CCM_CCGR_ON),
-	IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_01, // 18/A4  AD_B1_01  GPIO1.17  I2C1_SDA
-	IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_00, // 19/A5  AD_B1_00  GPIO1.16  I2C1_SCL
-	IOMUXC_SW_PAD_CTL_PAD_GPIO_AD_B1_01,
-	IOMUXC_SW_PAD_CTL_PAD_GPIO_AD_B1_00,
-	IOMUXC_LPI2C1_SDA_SELECT_INPUT,
-	IOMUXC_LPI2C1_SCL_SELECT_INPUT,
-	3 | 0x10,
-	3 | 0x10,
-	1,
-	1,
+		{{18, 3 | 0x10, &IOMUXC_LPI2C1_SDA_SELECT_INPUT, 1}, {0xff, 0xff, nullptr, 0}},
+		{{19, 3 | 0x10, &IOMUXC_LPI2C1_SCL_SELECT_INPUT, 1}, {0xff, 0xff, nullptr, 0}},
         IRQ_LPI2C1
 };
 TwoWire Wire(&IMXRT_LPI2C1, TwoWire::i2c1_hardware);
@@ -266,16 +314,8 @@ TwoWire Wire(&IMXRT_LPI2C1, TwoWire::i2c1_hardware);
 PROGMEM
 constexpr TwoWire::I2C_Hardware_t TwoWire::i2c3_hardware = {
         CCM_CCGR2, CCM_CCGR2_LPI2C3(CCM_CCGR_ON),
-	IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_06, // 17/A3  AD_B1_06  GPIO1.22  I2C3_SDA
-	IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_07, // 16/A2  AD_B1_07  GPIO1.23  I2C3_SCL
-	IOMUXC_SW_PAD_CTL_PAD_GPIO_AD_B1_06,
-	IOMUXC_SW_PAD_CTL_PAD_GPIO_AD_B1_07,
-	IOMUXC_LPI2C3_SDA_SELECT_INPUT,
-	IOMUXC_LPI2C3_SCL_SELECT_INPUT,
-	1 | 0x10,
-	1 | 0x10,
-	2,
-	2,
+		{{17, 1 | 0x10, &IOMUXC_LPI2C3_SDA_SELECT_INPUT, 2}, {36, 2 | 0x10, &IOMUXC_LPI2C3_SDA_SELECT_INPUT, 1}},
+		{{16, 1 | 0x10, &IOMUXC_LPI2C3_SCL_SELECT_INPUT, 2}, {37, 2 | 0x10, &IOMUXC_LPI2C3_SCL_SELECT_INPUT, 1}},
         IRQ_LPI2C3
 };
 TwoWire Wire1(&IMXRT_LPI2C3, TwoWire::i2c3_hardware);
@@ -283,16 +323,8 @@ TwoWire Wire1(&IMXRT_LPI2C3, TwoWire::i2c3_hardware);
 PROGMEM
 constexpr TwoWire::I2C_Hardware_t TwoWire::i2c4_hardware = {
         CCM_CCGR6, CCM_CCGR6_LPI2C4_SERIAL(CCM_CCGR_ON),
-	IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B0_13, // 25/A11  AD_B0_13  GPIO1.13  I2C4_SDA
-	IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B0_12, // 24/A10  AD_B1_12  GPIO1.12  I2C4_SCL
-	IOMUXC_SW_PAD_CTL_PAD_GPIO_AD_B0_13,
-	IOMUXC_SW_PAD_CTL_PAD_GPIO_AD_B0_12,
-	IOMUXC_LPI2C4_SDA_SELECT_INPUT,
-	IOMUXC_LPI2C4_SCL_SELECT_INPUT,
-	0 | 0x10,
-	0 | 0x10,
-	1,
-	1,
+		{{25, 0 | 0x10, &IOMUXC_LPI2C4_SDA_SELECT_INPUT, 1}, {0xff, 0xff, nullptr, 0}},
+		{{24, 0 | 0x10, &IOMUXC_LPI2C4_SCL_SELECT_INPUT, 1}, {0xff, 0xff, nullptr, 0}},
         IRQ_LPI2C4
 };
 TwoWire Wire2(&IMXRT_LPI2C4, TwoWire::i2c4_hardware);
