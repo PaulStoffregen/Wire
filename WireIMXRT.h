@@ -39,19 +39,20 @@ class TwoWire : public Stream
 {
 public:
 	// Hardware description struct
+	static const uint8_t cnt_sda_pins = 2;
+	static const uint8_t cnt_scl_pins = 2;
+	typedef struct {
+		const uint8_t 		pin;		// The pin number
+		const uint32_t 		mux_val;	// Value to set for mux;
+		volatile uint32_t	*select_input_register; // Which register controls the selection
+		const uint32_t		select_val;	// Value for that selection
+	} pin_info_t;
+
 	typedef struct {
 		volatile uint32_t &clock_gate_register;
 		uint32_t clock_gate_mask;
-		volatile uint32_t &sda_mux_register;
-		volatile uint32_t &scl_mux_register;
-		volatile uint32_t &sda_pad_register;
-		volatile uint32_t &scl_pad_register;
-		volatile uint32_t &sda_input_register;
-		volatile uint32_t &scl_input_register;
-		uint8_t sda_mux_value;
-		uint8_t scl_mux_value;
-		uint8_t sda_input_value;
-		uint8_t scl_input_value;
+		pin_info_t sda_pins[cnt_sda_pins];
+		pin_info_t scl_pins[cnt_scl_pins];
 		IRQ_NUMBER_t irq;
 	} I2C_Hardware_t;
 	static const I2C_Hardware_t i2c1_hardware;
@@ -69,10 +70,8 @@ public:
 	}
 	void end();
 	void setClock(uint32_t frequency);
-	void setSDA(uint8_t pin) {
-	}
-	void setSCL(uint8_t pin) {
-	}
+	void setSDA(uint8_t pin);
+	void setSCL(uint8_t pin); 
 	void beginTransmission(uint8_t address) {
 		txBuffer[0] = (address << 1);
 		transmitting = 1;
@@ -154,6 +153,8 @@ private:
 	//bool wait_idle(void);
 	IMXRT_LPI2C_t * const port;
 	const I2C_Hardware_t &hardware;
+	uint8_t	sda_pin_index_ = 0x0;	// default is always first item
+	uint8_t	scl_pin_index_ = 0x0;
 	uint8_t rxBuffer[BUFFER_LENGTH] = {};
 	uint8_t rxBufferIndex = 0;
 	uint8_t rxBufferLength = 0;
