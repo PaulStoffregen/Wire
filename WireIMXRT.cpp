@@ -116,6 +116,7 @@ size_t TwoWire::write(const uint8_t *data, size_t quantity)
 
 uint8_t TwoWire::endTransmission(uint8_t sendStop)
 {
+	//printf("\nendTransmission %d (%x %x %x) %x\n", txBufferLength,txBuffer[0], txBuffer[1], txBuffer[2], sendStop);
 	uint32_t i=0, len, status;
 
 	len = txBufferLength;
@@ -130,6 +131,12 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 	}
 	//printf("m=%x\n", status);
 
+	// Wonder if MFSR we should maybe clear it?
+	if ( port->MFSR & 0x7) {
+		port->MCR = LPI2C_MCR_MEN | LPI2C_MCR_RTF;  // clear the FIFO
+		port->MSR = LPI2C_MSR_PLTF | LPI2C_MSR_ALF | LPI2C_MSR_NDF | LPI2C_MSR_SDF | LPI2C_MSR_FEF; // clear flags
+		//printf("Clear TX Fifo %lx %lx\n", port->MSR, port->MFSR);
+	}
 	// TODO: is this correct if the prior use didn't send stop?
 	//port->MSR = LPI2C_MSR_PLTF | LPI2C_MSR_ALF | LPI2C_MSR_NDF | LPI2C_MSR_SDF; // clear flags
 	port->MSR = status;
@@ -210,6 +217,7 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 	uint32_t cmd=0, status, fifo;
 
 	// wait while bus is busy
+	//printf("\nrequestFrom %x %x %x\n", address, length, sendStop);
 	while (1) {
 		status = port->MSR; // pg 2899 & 2892
 		if (!(status & LPI2C_MSR_BBF)) break; // bus is available
@@ -219,9 +227,16 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 	//printf("idle2, msr=%x\n", status);
 
 	// TODO: is this correct if the prior use didn't send stop?
-	port->MSR = LPI2C_MSR_PLTF | LPI2C_MSR_ALF | LPI2C_MSR_NDF | LPI2C_MSR_SDF; // clear flags
+	port->MSR = LPI2C_MSR_PLTF | LPI2C_MSR_ALF | LPI2C_MSR_NDF | LPI2C_MSR_SDF | LPI2C_MSR_FEF; // clear flags
 
-	//printf("MSR=%lX, MFSR=%lX\n", status, port->MFSR);
+	//printf("MSR=%lX, MCR:%lx, MFSR=%lX\n", status, port->MCR, port->MFSR);
+
+	// Wonder if MFSR we should maybe clear it?
+	if ( port->MFSR & 0x7) {
+		port->MCR = LPI2C_MCR_MEN | LPI2C_MCR_RTF;  // clear the FIFO
+		port->MSR = LPI2C_MSR_PLTF | LPI2C_MSR_ALF | LPI2C_MSR_NDF | LPI2C_MSR_SDF | LPI2C_MSR_FEF; // clear flags
+		//printf("Clear TX Fifo %lx %lx\n", port->MSR, port->MFSR);
+	}
 	address = (address & 0x7F) << 1;
 	if (length < 1) length = 1;
 	if (length > 255) length = 255;
