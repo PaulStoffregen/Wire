@@ -13,8 +13,10 @@ void inline DBGPrintf(...) {};
 #endif
 void TwoWire::begin(void)
 {
-        // use 24 MHz clock
-    CCM_CSCDR2 = (CCM_CSCDR2 & ~CCM_CSCDR2_LPI2C_CLK_PODF(63)) | CCM_CSCDR2_LPI2C_CLK_SEL;
+	//use 60Mhz clock 
+	CCM_CSCDR2 = (CCM_CSCDR2 & ~CCM_CSCDR2_LPI2C_CLK_PODF(63)); 
+	CCM_CCSR = 0;
+
 	hardware.clock_gate_register |= hardware.clock_gate_mask;
     port->MCR = LPI2C_MCR_RST;
     setClock(100000);
@@ -130,7 +132,6 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 	if (!len) return 4; // no data to transmit
 
 	// wait while bus is busy
-	digitalWriteFast(0, HIGH);
 	while (1) {
 		status = port->MSR; // pg 2899 & 2892
 		if (!(status & LPI2C_MSR_BBF)) break; // bus is available
@@ -177,7 +178,6 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 		status = port->MSR; // pg 2899 & 2892
 		if (status & LPI2C_MSR_ALF) {
 			DBGPrintf("arbitration lost\n");
-			digitalWriteFast(0, LOW);
 			return 4; // we lost bus arbitration to another master
 		}
 		if (status & LPI2C_MSR_NDF) {
@@ -186,7 +186,6 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 			port->MCR = LPI2C_MCR_MEN | LPI2C_MCR_RTF;  // clear the FIFO
 			// TODO: is always sending a stop the right way to recover?
 			port->MTDR = LPI2C_MTDR_CMD_STOP;
-			digitalWriteFast(0, LOW);
 			return 2; // NACK for address
 			//return 3; // NACK for data TODO: how to discern addr from data?
 		}
@@ -207,7 +206,6 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 				// when all comments in fifo have been fully used
 				uint32_t fifo = port->MFSR & 0x07;
 				if (fifo == 0)  {
-					digitalWriteFast(0, LOW);
 					return 0;
 				}
 			}
@@ -220,7 +218,6 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 				// TODO: this returns before the last data transmits!
 				// Should verify every byte ACKs, arbitration not lost
 				//printf("fifo empty, msr=%x\n", status);
-				digitalWriteFast(0, LOW);
 				return 0;
 			}
 		}
@@ -233,8 +230,6 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 
 	// wait while bus is busy
 	DBGPrintf("\nrequestFrom %x %x %x\n", address, length, sendStop);
-	digitalWriteFast(1, HIGH);
-	digitalWriteFast(0, HIGH);
 
 	while (1) {
 		status = port->MSR; // pg 2899 & 2892
@@ -242,7 +237,6 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 		if (status & LPI2C_MSR_MBF) break; // we already have bus control
 		// TODO: timeout...
 	}
-	digitalWriteFast(0, LOW);
 	DBGPrintf("idle2, msr=%x\n", status);
 
 	// TODO: is this correct if the prior use didn't send stop?
@@ -318,7 +312,6 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 	//digitalWriteFast(15, HIGH);
 	//delayMicroseconds(2);
 	//digitalWriteFast(15, LOW);
-	digitalWriteFast(1, LOW);
 	return rxBufferLength;
 }
 
@@ -378,30 +371,37 @@ void TwoWire::setClock(uint32_t frequency)
 	if (frequency < 400000) {
 		// 100 kHz
 		port->MCCR0 = LPI2C_MCCR0_CLKHI(55) | LPI2C_MCCR0_CLKLO(59) |
-			LPI2C_MCCR0_DATAVD(25) | LPI2C_MCCR0_SETHOLD(/*40*/18);
-		port->MCFGR1 = LPI2C_MCFGR1_PRESCALE(1);
+			LPI2C_MCCR0_DATAVD(25) | LPI2C_MCCR0_SETHOLD(40);
+		port->MCFGR1 = LPI2C_MCFGR1_PRESCALE(2);
 		port->MCFGR2 = LPI2C_MCFGR2_FILTSDA(5) | LPI2C_MCFGR2_FILTSCL(5) |
 			LPI2C_MCFGR2_BUSIDLE(3900);
 	} else if (frequency < 1000000) {
 		// 400 kHz
-		port->MCCR0 = LPI2C_MCCR0_CLKHI(26) | LPI2C_MCCR0_CLKLO(28) |
-			LPI2C_MCCR0_DATAVD(12) | LPI2C_MCCR0_SETHOLD(/*10*/8);
-		port->MCFGR1 = LPI2C_MCFGR1_PRESCALE(0);
+		port->MCCR0 = LPI2C_MCCR0_CLKHI(31) | LPI2C_MCCR0_CLKLO(40) |
+			LPI2C_MCCR0_DATAVD(8) | LPI2C_MCCR0_SETHOLD(17);
+		port->MCFGR1 = LPI2C_MCFGR1_PRESCALE(1);
 		port->MCFGR2 = LPI2C_MCFGR2_FILTSDA(2) | LPI2C_MCFGR2_FILTSCL(2) |
 			LPI2C_MCFGR2_BUSIDLE(3900);
-	} else {
+	} else if (frequency < 3000000) {
 		// 1 MHz
-		port->MCCR0 = LPI2C_MCCR0_CLKHI(9) | LPI2C_MCCR0_CLKLO(10) |
-			LPI2C_MCCR0_DATAVD(4) | LPI2C_MCCR0_SETHOLD(7);
-		port->MCFGR1 = LPI2C_MCFGR1_PRESCALE(0);
+		port->MCCR0 = LPI2C_MCCR0_CLKHI(9) | LPI2C_MCCR0_CLKLO(18) |
+			LPI2C_MCCR0_DATAVD(4) | LPI2C_MCCR0_SETHOLD(9);
+		port->MCFGR1 = LPI2C_MCFGR1_PRESCALE(1);
 		port->MCFGR2 = LPI2C_MCFGR2_FILTSDA(1) | LPI2C_MCFGR2_FILTSCL(1) |
 			LPI2C_MCFGR2_BUSIDLE(3900);
-	}
-        port->MCCR1 = port->MCCR0;
-        port->MCFGR0 = 0;
-        port->MCFGR3 = LPI2C_MCFGR3_PINLOW(3900);
-        port->MFCR = LPI2C_MFCR_RXWATER(1) | LPI2C_MFCR_TXWATER(1);
-        port->MCR = LPI2C_MCR_MEN;
+	} else {
+		// 3.33 MHz
+		port->MCCR0 = LPI2C_MCCR0_CLKHI(2) | LPI2C_MCCR0_CLKLO(4) |
+			LPI2C_MCCR0_DATAVD(1) | LPI2C_MCCR0_SETHOLD(4);
+		port->MCFGR1 = LPI2C_MCFGR1_PRESCALE(1);
+		port->MCFGR2 = LPI2C_MCFGR2_FILTSDA(1) | LPI2C_MCFGR2_FILTSCL(1) |
+			LPI2C_MCFGR2_BUSIDLE(3900);
+	}        port->MCCR1 = port->MCCR0;
+
+    port->MCFGR0 = 0;
+    port->MCFGR3 = LPI2C_MCFGR3_PINLOW(3900);
+    port->MFCR = LPI2C_MFCR_RXWATER(1) | LPI2C_MFCR_TXWATER(1);
+    port->MCR = LPI2C_MCR_MEN;
 }
 
 #endif
