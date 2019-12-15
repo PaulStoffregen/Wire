@@ -6,6 +6,8 @@
 
 #include "debug/printf.h"
 
+#define PINCONFIG (IOMUXC_PAD_ODE | IOMUXC_PAD_SRE | IOMUXC_PAD_DSE(7) | IOMUXC_PAD_SPEED(0) | IOMUXC_PAD_PKE | IOMUXC_PAD_PUE | IOMUXC_PAD_PUS(3))
+
 void TwoWire::begin(void)
 {
         // use 24 MHz clock
@@ -15,14 +17,14 @@ void TwoWire::begin(void)
     setClock(100000);
 
     // Setup SDA register
-	*(portControlRegister(hardware.sda_pins[sda_pin_index_].pin)) |= IOMUXC_PAD_PKE | IOMUXC_PAD_PUE | IOMUXC_PAD_PUS(3);
+	*(portControlRegister(hardware.sda_pins[sda_pin_index_].pin)) = PINCONFIG;
 	*(portConfigRegister(hardware.sda_pins[sda_pin_index_].pin)) = hardware.sda_pins[sda_pin_index_].mux_val;
 	if (hardware.sda_pins[sda_pin_index_].select_input_register) {
 	 	*(hardware.sda_pins[sda_pin_index_].select_input_register) =  hardware.sda_pins[sda_pin_index_].select_val;		
 	}	
 
 	// setup SCL register
-	*(portControlRegister(hardware.scl_pins[scl_pin_index_].pin)) |= IOMUXC_PAD_PKE | IOMUXC_PAD_PUE | IOMUXC_PAD_PUS(3);
+	*(portControlRegister(hardware.scl_pins[scl_pin_index_].pin)) = PINCONFIG;
 	*(portConfigRegister(hardware.scl_pins[scl_pin_index_].pin)) = hardware.scl_pins[scl_pin_index_].mux_val;
 	if (hardware.scl_pins[scl_pin_index_].select_input_register) {
 	 	*(hardware.scl_pins[scl_pin_index_].select_input_register) =  hardware.scl_pins[scl_pin_index_].select_val;		
