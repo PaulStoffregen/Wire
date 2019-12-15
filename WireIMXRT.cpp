@@ -132,7 +132,8 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 	//printf("m=%x\n", status);
 
 	// Wonder if MFSR we should maybe clear it?
-	if ( port->MFSR & 0x7) {
+	if ((port->MFSR & 0x7) &&
+	  ((port->MSR & (LPI2C_MSR_BBF|LPI2C_MSR_MBF)) != (LPI2C_MSR_BBF|LPI2C_MSR_MBF))) {
 		port->MCR = LPI2C_MCR_MEN | LPI2C_MCR_RTF;  // clear the FIFO
 		port->MSR = LPI2C_MSR_PLTF | LPI2C_MSR_ALF | LPI2C_MSR_NDF | LPI2C_MSR_SDF | LPI2C_MSR_FEF; // clear flags
 		//printf("Clear TX Fifo %lx %lx\n", port->MSR, port->MFSR);
@@ -232,7 +233,8 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 	//printf("MSR=%lX, MCR:%lx, MFSR=%lX\n", status, port->MCR, port->MFSR);
 
 	// Wonder if MFSR we should maybe clear it?
-	if ( port->MFSR & 0x7) {
+	if ((port->MFSR & 0x7) &&
+	  ((port->MSR & (LPI2C_MSR_BBF|LPI2C_MSR_MBF)) != (LPI2C_MSR_BBF|LPI2C_MSR_MBF))) {
 		port->MCR = LPI2C_MCR_MEN | LPI2C_MCR_RTF;  // clear the FIFO
 		port->MSR = LPI2C_MSR_PLTF | LPI2C_MSR_ALF | LPI2C_MSR_NDF | LPI2C_MSR_SDF | LPI2C_MSR_FEF; // clear flags
 		//printf("Clear TX Fifo %lx %lx\n", port->MSR, port->MFSR);
