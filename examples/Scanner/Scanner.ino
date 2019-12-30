@@ -140,7 +140,7 @@ void printKnownChips(byte address)
     case 0x48: Serial.print(F("ADS1115,PN532,TMP102,LM75,PCF8591")); break;
     case 0x49: Serial.print(F("ADS1115,TSL2561,PCF8591")); break;
     case 0x4A: Serial.print(F("ADS1115")); break;
-    case 0x4B: Serial.print(F("ADS1115,TMP102")); break;
+    case 0x4B: Serial.print(F("ADS1115,TMP102,BNO080")); break;
     case 0x50: Serial.print(F("EEPROM")); break;
     case 0x51: Serial.print(F("EEPROM")); break;
     case 0x52: Serial.print(F("Nunchuk,EEPROM")); break;
