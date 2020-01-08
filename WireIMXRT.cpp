@@ -232,6 +232,15 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 	// TODO: is this correct if the prior use didn't send stop?
 	port->MSR = LPI2C_MSR_PLTF | LPI2C_MSR_ALF | LPI2C_MSR_NDF | LPI2C_MSR_SDF | LPI2C_MSR_FEF; // clear flags
 
+	// these delays are an ugly kludge for BNO080
+	// https://forum.pjrc.com/threads/58268
+	// TODO: need more robust error recovery!!
+	if (status & (LPI2C_MSR_ALF | LPI2C_MSR_NDF)) {
+		delayMicroseconds(300); // min=120
+	} else if (status & (LPI2C_MSR_PLTF | LPI2C_MSR_FEF)) {
+		delayMicroseconds(60); // min=30
+	}
+
 	//printf("MSR=%lX, MCR:%lx, MFSR=%lX\n", status, port->MCR, port->MFSR);
 
 	// Wonder if MFSR we should maybe clear it?
