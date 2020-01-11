@@ -151,6 +151,8 @@ public:
 private:
 	//void isr(void);
 	//bool wait_idle(void);
+	bool wait_idle();
+	bool force_clock();
 	IMXRT_LPI2C_t * const port;
 	const I2C_Hardware_t &hardware;
 	uint8_t	sda_pin_index_ = 0x0;	// default is always first item
