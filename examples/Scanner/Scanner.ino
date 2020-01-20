@@ -141,7 +141,7 @@ void printKnownChips(byte address)
     case 0x49: Serial.print(F("ADS1115,TSL2561,PCF8591")); break;
     case 0x4A: Serial.print(F("ADS1115")); break;
     case 0x4B: Serial.print(F("ADS1115,TMP102,BNO080")); break;
-    case 0x50: Serial.print(F("EEPROM")); break;
+    case 0x50: Serial.print(F("EEPROM,FRAM")); break;
     case 0x51: Serial.print(F("EEPROM")); break;
     case 0x52: Serial.print(F("Nunchuk,EEPROM")); break;
     case 0x53: Serial.print(F("ADXL345,EEPROM")); break;
@@ -167,6 +167,7 @@ void printKnownChips(byte address)
     case 0x73: Serial.print(F("HT16K33")); break;
     case 0x76: Serial.print(F("MS5607,MS5611,MS5637,BMP280")); break;
     case 0x77: Serial.print(F("BMP085,BMA180,BMP280,MS5611")); break;
+    case 0x7C: Serial.print(F("FRAM_ID")); break;
     default: Serial.print(F("unknown chip"));
   }
 }
