@@ -34,6 +34,9 @@
 
 #define BUFFER_LENGTH 32
 //#define WIRE_HAS_END 1
+#define WIRE_IMPLEMENT_WIRE
+#define WIRE_IMPLEMENT_WIRE1
+#define WIRE_IMPLEMENT_WIRE2
 
 class TwoWire : public Stream
 {
