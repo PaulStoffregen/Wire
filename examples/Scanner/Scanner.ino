@@ -129,7 +129,7 @@ void printKnownChips(byte address)
     case 0x39: Serial.print(F("TSL2561, APDS9960")); break;
     case 0x3C: Serial.print(F("SSD1306,DigisparkOLED")); break;
     case 0x3D: Serial.print(F("SSD1306")); break;
-    case 0x40: Serial.print(F("PCA9685,Si7021")); break;
+    case 0x40: Serial.print(F("PCA9685,Si7021,MS8607")); break;
     case 0x41: Serial.print(F("STMPE610,PCA9685")); break;
     case 0x42: Serial.print(F("PCA9685")); break;
     case 0x43: Serial.print(F("PCA9685")); break;
