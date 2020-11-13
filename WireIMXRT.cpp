@@ -324,7 +324,7 @@ constexpr TwoWire::I2C_Hardware_t TwoWire::i2c3_hardware = {
 #if defined(ARDUINO_TEENSY41)
 		{{17, 1 | 0x10, &IOMUXC_LPI2C3_SDA_SELECT_INPUT, 2}, {44, 2 | 0x10, &IOMUXC_LPI2C3_SDA_SELECT_INPUT, 1}},
 		{{16, 1 | 0x10, &IOMUXC_LPI2C3_SCL_SELECT_INPUT, 2}, {45, 2 | 0x10, &IOMUXC_LPI2C3_SCL_SELECT_INPUT, 1}},
-#else
+#else  // T4 and ARDUINO_TEENSY_MICROMOD
 		{{17, 1 | 0x10, &IOMUXC_LPI2C3_SDA_SELECT_INPUT, 2}, {36, 2 | 0x10, &IOMUXC_LPI2C3_SDA_SELECT_INPUT, 1}},
 		{{16, 1 | 0x10, &IOMUXC_LPI2C3_SCL_SELECT_INPUT, 2}, {37, 2 | 0x10, &IOMUXC_LPI2C3_SCL_SELECT_INPUT, 1}},
 #endif
@@ -341,6 +341,16 @@ constexpr TwoWire::I2C_Hardware_t TwoWire::i2c4_hardware = {
 };
 TwoWire Wire2(&IMXRT_LPI2C4, TwoWire::i2c4_hardware);
 
+#if defined(ARDUINO_TEENSY_MICROMOD)
+PROGMEM
+constexpr TwoWire::I2C_Hardware_t TwoWire::i2c2_hardware = {
+	CCM_CCGR2, CCM_CCGR2_LPI2C2(CCM_CCGR_ON),
+		{{41, 2 | 0x10, &IOMUXC_LPI2C2_SDA_SELECT_INPUT, 1}, {0xff, 0xff, nullptr, 0}},
+		{{40, 2 | 0x10, &IOMUXC_LPI2C2_SCL_SELECT_INPUT, 1}, {0xff, 0xff, nullptr, 0}},
+	IRQ_LPI2C4
+};
+TwoWire Wire3(&IMXRT_LPI2C2, TwoWire::i2c2_hardware);
+#endif
 
 
 
