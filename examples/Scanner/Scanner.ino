@@ -94,6 +94,7 @@ void printKnownChips(byte address)
     case 0x01: Serial.print(F("AS3935")); break;
     case 0x02: Serial.print(F("AS3935")); break;
     case 0x03: Serial.print(F("AS3935")); break;
+    case 0x04: Serial.print(F("ADAU1966")); break;
     case 0x0A: Serial.print(F("SGTL5000")); break; // MCLK required
     case 0x0B: Serial.print(F("SMBusBattery?")); break;
     case 0x0C: Serial.print(F("AK8963")); break;
@@ -110,7 +111,7 @@ void printKnownChips(byte address)
     case 0x21: Serial.print(F("MCP23017,MCP23008,PCF8574")); break;
     case 0x22: Serial.print(F("MCP23017,MCP23008,PCF8574")); break;
     case 0x23: Serial.print(F("MCP23017,MCP23008,PCF8574")); break;
-    case 0x24: Serial.print(F("MCP23017,MCP23008,PCF8574")); break;
+    case 0x24: Serial.print(F("MCP23017,MCP23008,PCF8574,ADAU1966")); break;
     case 0x25: Serial.print(F("MCP23017,MCP23008,PCF8574")); break;
     case 0x26: Serial.print(F("MCP23017,MCP23008,PCF8574")); break;
     case 0x27: Serial.print(F("MCP23017,MCP23008,PCF8574,LCD16x2,DigoleDisplay")); break;
@@ -136,14 +137,14 @@ void printKnownChips(byte address)
     case 0x41: Serial.print(F("STMPE610,PCA9685")); break;
     case 0x42: Serial.print(F("PCA9685")); break;
     case 0x43: Serial.print(F("PCA9685")); break;
-    case 0x44: Serial.print(F("PCA9685, SHT3X")); break;
+    case 0x44: Serial.print(F("PCA9685, SHT3X, ADAU1966")); break;
     case 0x45: Serial.print(F("PCA9685, SHT3X")); break;
     case 0x46: Serial.print(F("PCA9685")); break;
     case 0x47: Serial.print(F("PCA9685")); break;
-    case 0x48: Serial.print(F("ADS1115,PN532,TMP102,LM75,PCF8591")); break;
-    case 0x49: Serial.print(F("ADS1115,TSL2561,PCF8591")); break;
-    case 0x4A: Serial.print(F("ADS1115,Qwiic Keypad")); break;
-    case 0x4B: Serial.print(F("ADS1115,TMP102,BNO080,Qwiic Keypad")); break;
+    case 0x48: Serial.print(F("ADS1115,PN532,TMP102,LM75,PCF8591,CS42448")); break;
+    case 0x49: Serial.print(F("ADS1115,TSL2561,PCF8591,CS42448")); break;
+    case 0x4A: Serial.print(F("ADS1115,Qwiic Keypad,CS42448")); break;
+    case 0x4B: Serial.print(F("ADS1115,TMP102,BNO080,Qwiic Keypad,CS42448")); break;
     case 0x50: Serial.print(F("EEPROM,FRAM")); break;
     case 0x51: Serial.print(F("EEPROM")); break;
     case 0x52: Serial.print(F("Nunchuk,EEPROM")); break;
@@ -158,7 +159,7 @@ void printKnownChips(byte address)
     case 0x61: Serial.print(F("MCP4725,AtlasEzoDO")); break;
     case 0x62: Serial.print(F("LidarLite,MCP4725,AtlasEzoORP")); break;
     case 0x63: Serial.print(F("MCP4725,AtlasEzoPH")); break;
-    case 0x64: Serial.print(F("AtlasEzoEC")); break;
+    case 0x64: Serial.print(F("AtlasEzoEC, ADAU1966")); break;
     case 0x66: Serial.print(F("AtlasEzoRTD")); break;
     case 0x68: Serial.print(F("DS1307,DS3231,MPU6050,MPU9050,MPU9250,ITG3200,ITG3701,LSM9DS0,L3G4200D")); break;
     case 0x69: Serial.print(F("MPU6050,MPU9050,MPU9250,ITG3701,L3G4200D")); break;
