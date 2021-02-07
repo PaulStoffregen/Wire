@@ -166,7 +166,7 @@ void printKnownChips(byte address)
     case 0x6A: Serial.print(F("LSM9DS1")); break;
     case 0x6B: Serial.print(F("LSM9DS0")); break;
     case 0x6F: Serial.print(F("Qwiic Button")); break;
-    case 0x70: Serial.print(F("HT16K33")); break;
+    case 0x70: Serial.print(F("HT16K33,TCA9548A")); break;
     case 0x71: Serial.print(F("SFE7SEG,HT16K33")); break;
     case 0x72: Serial.print(F("HT16K33")); break;
     case 0x73: Serial.print(F("HT16K33")); break;
