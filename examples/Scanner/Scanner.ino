@@ -111,7 +111,7 @@ void printKnownChips(byte address)
     case 0x21: Serial.print(F("MCP23017,MCP23008,PCF8574")); break;
     case 0x22: Serial.print(F("MCP23017,MCP23008,PCF8574")); break;
     case 0x23: Serial.print(F("MCP23017,MCP23008,PCF8574")); break;
-    case 0x24: Serial.print(F("MCP23017,MCP23008,PCF8574,ADAU1966")); break;
+    case 0x24: Serial.print(F("MCP23017,MCP23008,PCF8574,ADAU1966,HM01B0")); break;
     case 0x25: Serial.print(F("MCP23017,MCP23008,PCF8574")); break;
     case 0x26: Serial.print(F("MCP23017,MCP23008,PCF8574")); break;
     case 0x27: Serial.print(F("MCP23017,MCP23008,PCF8574,LCD16x2,DigoleDisplay")); break;
