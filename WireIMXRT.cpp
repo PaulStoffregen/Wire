@@ -330,7 +330,7 @@ constexpr TwoWire::I2C_Hardware_t TwoWire::i2c3_hardware = {
 #endif
 	IRQ_LPI2C3
 };
-TwoWire Wire1(&IMXRT_LPI2C3, TwoWire::i2c3_hardware);
+//TwoWire Wire1(&IMXRT_LPI2C3, TwoWire::i2c3_hardware);
 
 PROGMEM
 constexpr TwoWire::I2C_Hardware_t TwoWire::i2c4_hardware = {
@@ -339,7 +339,16 @@ constexpr TwoWire::I2C_Hardware_t TwoWire::i2c4_hardware = {
 		{{24, 0 | 0x10, &IOMUXC_LPI2C4_SCL_SELECT_INPUT, 1}, {0xff, 0xff, nullptr, 0}},
 	IRQ_LPI2C4
 };
-TwoWire Wire2(&IMXRT_LPI2C4, TwoWire::i2c4_hardware);
+//TwoWire Wire2(&IMXRT_LPI2C4, TwoWire::i2c4_hardware);
+
+#if defined(ARDUINO_TEENSY_MICROMOD)
+	TwoWire Wire2(&IMXRT_LPI2C3, TwoWire::i2c3_hardware);
+	TwoWire Wire1(&IMXRT_LPI2C4, TwoWire::i2c4_hardware);
+#else
+	TwoWire Wire1(&IMXRT_LPI2C3, TwoWire::i2c3_hardware);
+	TwoWire Wire2(&IMXRT_LPI2C4, TwoWire::i2c4_hardware);
+#endif
+
 
 #if defined(ARDUINO_TEENSY_MICROMOD)
 PROGMEM
