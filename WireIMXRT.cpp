@@ -236,7 +236,7 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 	if (!wait_idle()) return 4;
 	address = (address & 0x7F) << 1;
 	if (length < 1) length = 1;
-	if (length > 255) length = 255;
+	//if (length > 255) length = 255;
 	rxBufferIndex = 0;
 	rxBufferLength = 0;
 	uint32_t tx_state = 0; // 0=begin, 1=start, 2=data, 3=stop
