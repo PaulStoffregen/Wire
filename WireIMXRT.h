@@ -32,7 +32,7 @@
 #include <Arduino.h>
 #include <stdint.h>
 
-#define BUFFER_LENGTH 32
+#define BUFFER_LENGTH 136
 //#define WIRE_HAS_END 1
 #define WIRE_IMPLEMENT_WIRE
 #define WIRE_IMPLEMENT_WIRE1
