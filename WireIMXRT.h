@@ -88,6 +88,9 @@ public:
 		return endTransmission(1);
 	}
 	uint8_t requestFrom(uint8_t address, uint8_t quantity, uint8_t sendStop);
+	uint8_t requestFrom(uint8_t address, uint8_t quantity, bool sendStop) {
+		return requestFrom(address, quantity, (uint8_t)(sendStop ? 1 : 0));
+	}
 	uint8_t requestFrom(uint8_t address, uint8_t quantity) {
 		return requestFrom(address, quantity, (uint8_t)1);
 	}
