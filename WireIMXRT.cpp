@@ -8,6 +8,11 @@
 
 #define PINCONFIG (IOMUXC_PAD_ODE | IOMUXC_PAD_SRE | IOMUXC_PAD_DSE(4) | IOMUXC_PAD_SPEED(1) | IOMUXC_PAD_PKE | IOMUXC_PAD_PUE | IOMUXC_PAD_PUS(3))
 
+
+//***************************************************
+//  Master Mode
+//***************************************************
+
 FLASHMEM void TwoWire::begin(void)
 {
 	// use 24 MHz clock
@@ -15,107 +20,15 @@ FLASHMEM void TwoWire::begin(void)
 	hardware.clock_gate_register |= hardware.clock_gate_mask;
 	port->MCR = LPI2C_MCR_RST;
 	setClock(100000);
-
-	// Setup SDA register
-	*(portControlRegister(hardware.sda_pins[sda_pin_index_].pin)) = PINCONFIG;
-	*(portConfigRegister(hardware.sda_pins[sda_pin_index_].pin)) = hardware.sda_pins[sda_pin_index_].mux_val;
-	if (hardware.sda_pins[sda_pin_index_].select_input_register) {
-		*(hardware.sda_pins[sda_pin_index_].select_input_register) =  hardware.sda_pins[sda_pin_index_].select_val;
-	}
-
-	// setup SCL register
-	*(portControlRegister(hardware.scl_pins[scl_pin_index_].pin)) = PINCONFIG;
-	*(portConfigRegister(hardware.scl_pins[scl_pin_index_].pin)) = hardware.scl_pins[scl_pin_index_].mux_val;
-	if (hardware.scl_pins[scl_pin_index_].select_input_register) {
-		*(hardware.scl_pins[scl_pin_index_].select_input_register) =  hardware.scl_pins[scl_pin_index_].select_val;
-	}
-}
-
-void TwoWire::begin(uint8_t address)
-{
-	// TODO: slave mode
+	// setSDA() & setSCL() may be called before or after begin()
+	configSDApin(sda_pin_index_); // Setup SDA register
+	configSCLpin(scl_pin_index_); // setup SCL register
 }
 
 void TwoWire::end()
 {
 }
 
-void TwoWire::setSDA(uint8_t pin) {
-	if (pin == hardware.sda_pins[sda_pin_index_].pin) return;
-	uint32_t newindex=0;
-	while (1) {
-		uint32_t sda_pin = hardware.sda_pins[newindex].pin;
-		if (sda_pin == 255) return;
-		if (sda_pin == pin) break;
-		if (++newindex >= sizeof(hardware.sda_pins)) return;
-	}
-	if ((hardware.clock_gate_register & hardware.clock_gate_mask)) {
-		*(portConfigRegister(hardware.sda_pins[sda_pin_index_].pin)) = 5;	// hard to know what to go back to?
-
-		// setup new one...
-		*(portControlRegister(hardware.sda_pins[newindex].pin)) |= IOMUXC_PAD_PKE | IOMUXC_PAD_PUE | IOMUXC_PAD_PUS(3);
-		*(portConfigRegister(hardware.sda_pins[newindex].pin)) = hardware.sda_pins[newindex].mux_val;
-		if (hardware.sda_pins[newindex].select_input_register) {
-			*(hardware.sda_pins[newindex].select_input_register) =  hardware.sda_pins[newindex].select_val;
-		}
-	}
-	sda_pin_index_ = newindex;
-}
-
-void TwoWire::setSCL(uint8_t pin) {
-	if (pin == hardware.scl_pins[scl_pin_index_].pin) return;
-	uint32_t newindex=0;
-	while (1) {
-		uint32_t scl_pin = hardware.scl_pins[newindex].pin;
-		if (scl_pin == 255) return;
-		if (scl_pin == pin) break;
-		if (++newindex >= sizeof(hardware.scl_pins)) return;
-	}
-	if ((hardware.clock_gate_register & hardware.clock_gate_mask)) {
-		*(portConfigRegister(hardware.scl_pins[scl_pin_index_].pin)) = 5;	// hard to know what to go back to?
-
-		// setup new one...
-		*(portControlRegister(hardware.scl_pins[newindex].pin)) |= IOMUXC_PAD_PKE | IOMUXC_PAD_PUE | IOMUXC_PAD_PUS(3);
-		*(portConfigRegister(hardware.scl_pins[newindex].pin)) = hardware.scl_pins[newindex].mux_val;
-		if (hardware.scl_pins[newindex].select_input_register) {
-			*(hardware.scl_pins[newindex].select_input_register) =  hardware.scl_pins[newindex].select_val;
-		}
-	}
-	scl_pin_index_ = newindex;
-}
-
-bool TwoWire::force_clock()
-{
-	bool ret = false;
-	uint32_t sda_pin = hardware.sda_pins[sda_pin_index_].pin;
-	uint32_t scl_pin = hardware.scl_pins[scl_pin_index_].pin;
-	uint32_t sda_mask = digitalPinToBitMask(sda_pin);
-	uint32_t scl_mask = digitalPinToBitMask(scl_pin);
-	// take control of pins with GPIO
-	*portConfigRegister(sda_pin) = 5 | 0x10;
-	*portSetRegister(sda_pin) = sda_mask;
-	*portModeRegister(sda_pin) |= sda_mask;
-	*portConfigRegister(scl_pin) = 5 | 0x10;
-	*portSetRegister(scl_pin) = scl_mask;
-	*portModeRegister(scl_pin) |= scl_mask;
-	delayMicroseconds(10);
-	for (int i=0; i < 9; i++) {
-		if ((*portInputRegister(sda_pin) & sda_mask)
-		  && (*portInputRegister(scl_pin) & scl_mask)) {
-			// success, both pins are high
-			ret = true;
-			break;
-		}
-		*portClearRegister(scl_pin) = scl_mask;
-		delayMicroseconds(5);
-		*portSetRegister(scl_pin) = scl_mask;
-		delayMicroseconds(5);
-	}
-	// return control of pins to I2C
-	*(portConfigRegister(sda_pin)) = hardware.sda_pins[sda_pin_index_].mux_val;
-	*(portConfigRegister(scl_pin)) = hardware.scl_pins[scl_pin_index_].mux_val;
-	return ret;
-}
 
 size_t TwoWire::write(uint8_t data)
 {
@@ -144,9 +57,6 @@ size_t TwoWire::write(const uint8_t *data, size_t quantity)
 	}
 	return 0;
 }
-
-
-
 
 // 2      BBF = Bus Busy Flag
 // 1      MBF = Master Busy Flag
@@ -305,6 +215,116 @@ uint8_t TwoWire::requestFrom(uint8_t addr, uint8_t qty, uint32_t iaddr, uint8_t 
 	}
 	if (qty > BUFFER_LENGTH) qty = BUFFER_LENGTH;
 	return requestFrom(addr, qty, stop);
+}
+
+bool TwoWire::force_clock()
+{
+	bool ret = false;
+	uint32_t sda_pin = hardware.sda_pins[sda_pin_index_].pin;
+	uint32_t scl_pin = hardware.scl_pins[scl_pin_index_].pin;
+	uint32_t sda_mask = digitalPinToBitMask(sda_pin);
+	uint32_t scl_mask = digitalPinToBitMask(scl_pin);
+	// take control of pins with GPIO
+	*portConfigRegister(sda_pin) = 5 | 0x10;
+	*portSetRegister(sda_pin) = sda_mask;
+	*portModeRegister(sda_pin) |= sda_mask;
+	*portConfigRegister(scl_pin) = 5 | 0x10;
+	*portSetRegister(scl_pin) = scl_mask;
+	*portModeRegister(scl_pin) |= scl_mask;
+	delayMicroseconds(10);
+	for (int i=0; i < 9; i++) {
+		if ((*portInputRegister(sda_pin) & sda_mask)
+		  && (*portInputRegister(scl_pin) & scl_mask)) {
+			// success, both pins are high
+			ret = true;
+			break;
+		}
+		*portClearRegister(scl_pin) = scl_mask;
+		delayMicroseconds(5);
+		*portSetRegister(scl_pin) = scl_mask;
+		delayMicroseconds(5);
+	}
+	// return control of pins to I2C
+	*(portConfigRegister(sda_pin)) = hardware.sda_pins[sda_pin_index_].mux_val;
+	*(portConfigRegister(scl_pin)) = hardware.scl_pins[scl_pin_index_].mux_val;
+	return ret;
+}
+
+
+
+//***************************************************
+//  Slave Mode
+//***************************************************
+
+
+void TwoWire::begin(uint8_t address)
+{
+	// TODO: slave mode
+}
+
+
+
+
+
+
+
+//***************************************************
+//  Pins Configuration
+//***************************************************
+
+
+FLASHMEM void TwoWire::setSDA(uint8_t pin) {
+	if (pin == hardware.sda_pins[sda_pin_index_].pin) return;
+	uint32_t newindex=0;
+	while (1) {
+		uint32_t sda_pin = hardware.sda_pins[newindex].pin;
+		if (sda_pin == 255) return;
+		if (sda_pin == pin) break;
+		if (++newindex >= sizeof(hardware.sda_pins)) return;
+	}
+	if ((hardware.clock_gate_register & hardware.clock_gate_mask)) {
+		// disable old pin, hard to know what to go back to?
+		*(portConfigRegister(hardware.sda_pins[sda_pin_index_].pin)) = 5;
+		// setup new one...
+		configSDApin(newindex);
+	}
+	sda_pin_index_ = newindex;
+}
+
+FLASHMEM void TwoWire::configSDApin(uint8_t i)
+{
+	*(portControlRegister(hardware.sda_pins[i].pin)) = PINCONFIG;
+	*(portConfigRegister(hardware.sda_pins[i].pin)) = hardware.sda_pins[i].mux_val;
+	if (hardware.sda_pins[i].select_input_register) {
+		*(hardware.sda_pins[i].select_input_register) = hardware.sda_pins[i].select_val;
+	}
+}
+
+FLASHMEM void TwoWire::setSCL(uint8_t pin) {
+	if (pin == hardware.scl_pins[scl_pin_index_].pin) return;
+	uint32_t newindex=0;
+	while (1) {
+		uint32_t scl_pin = hardware.scl_pins[newindex].pin;
+		if (scl_pin == 255) return;
+		if (scl_pin == pin) break;
+		if (++newindex >= sizeof(hardware.scl_pins)) return;
+	}
+	if ((hardware.clock_gate_register & hardware.clock_gate_mask)) {
+		// disable old pin, hard to know what to go back to?
+		*(portConfigRegister(hardware.scl_pins[scl_pin_index_].pin)) = 5;
+		// setup new one...
+		configSCLpin(newindex);
+	}
+	scl_pin_index_ = newindex;
+}
+
+FLASHMEM void TwoWire::configSCLpin(uint8_t i)
+{
+	*(portControlRegister(hardware.scl_pins[i].pin)) = PINCONFIG;
+	*(portConfigRegister(hardware.scl_pins[i].pin)) = hardware.scl_pins[i].mux_val;
+	if (hardware.scl_pins[i].select_input_register) {
+		*(hardware.scl_pins[i].select_input_register) = hardware.scl_pins[i].select_val;
+	}
 }
 
 

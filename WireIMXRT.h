@@ -157,6 +157,8 @@ public:
 private:
 	//void isr(void);
 	//bool wait_idle(void);
+	void configSDApin(uint8_t index);
+	void configSCLpin(uint8_t index);
 	bool wait_idle();
 	bool force_clock();
 	IMXRT_LPI2C_t * const port;
