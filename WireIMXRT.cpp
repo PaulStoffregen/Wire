@@ -265,22 +265,17 @@ void TwoWire::begin(uint8_t address)
 	// setSDA() & setSCL() may be called before or after begin()
 	configSDApin(sda_pin_index_); // Setup SDA register
 	configSCLpin(scl_pin_index_); // setup SCL register
-
 	port->SCR = LPI2C_SCR_RST;
 	port->SCR = 0;
-
-	port->SCFGR1 = 0; // page 2841
-
+	port->SCFGR1 = LPI2C_SCFGR1_TXDSTALL | LPI2C_SCFGR1_RXSTALL; // page 2841
 	port->SCFGR2 = 0; // page 2843;
-
 	port->SAMR = LPI2C_SAMR_ADDR0(address);
-
 	attachInterruptVector(hardware.irq_number, hardware.irq_function);
 	NVIC_SET_PRIORITY(hardware.irq_number, 144);
 	NVIC_ENABLE_IRQ(hardware.irq_number);
-
-	port->SIER = /*LPI2C_SIER_TDIE | */ LPI2C_SIER_RDIE | LPI2C_SIER_SDIE;
-
+	port->SIER = LPI2C_SIER_TDIE |  LPI2C_SIER_RDIE | LPI2C_SIER_SDIE;
+	transmitting = 0;
+	slave_mode = 1;
 	port->SCR = LPI2C_SCR_SEN;
 }
 
@@ -306,14 +301,32 @@ void TwoWire::isr(void)
 		//Serial.print("rx = ");
 		//Serial.println(rx, HEX);
 	}
+	if (status & LPI2C_SSR_TDF) { // Transmit Data Flag
+		if (!transmitting) {
+			if (user_onRequest != nullptr) {
+				(*user_onRequest)();
+			}
+			txBufferIndex = 0;
+			transmitting = 1;
+		}
+		if (txBufferIndex < txBufferLength) {
+			port->STDR = txBuffer[txBufferIndex++];
+		} else {
+			port->STDR = 0;
+		}
+		//Serial.println("tx");
+	}
 
-	if (status & LPI2C_SSR_SDF) {
+	if (status & LPI2C_SSR_SDF) { // Stop
 		//Serial.println("Stop");
 		if (rxBufferLength > 0 && user_onReceive != nullptr) {
 			(*user_onReceive)(rxBufferLength);
-			rxBufferIndex = 0;
-			rxBufferLength = 0;
 		}
+		rxBufferIndex = 0;
+		rxBufferLength = 0;
+		txBufferIndex = 0;
+		txBufferLength = 0;
+		transmitting = 0;
 	}
 }
 
