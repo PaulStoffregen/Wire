@@ -56,7 +56,8 @@ public:
 		uint32_t clock_gate_mask;
 		pin_info_t sda_pins[cnt_sda_pins];
 		pin_info_t scl_pins[cnt_scl_pins];
-		IRQ_NUMBER_t irq;
+		IRQ_NUMBER_t irq_number;
+		void (*irq_function)(void);
 	} I2C_Hardware_t;
 	static const I2C_Hardware_t i2c1_hardware;
 	static const I2C_Hardware_t i2c2_hardware;
@@ -155,7 +156,7 @@ public:
 	}
 	using Print::write;
 private:
-	//void isr(void);
+	void isr(void);
 	//bool wait_idle(void);
 	void configSDApin(uint8_t index);
 	void configSCLpin(uint8_t index);
@@ -182,10 +183,10 @@ private:
 	void (*user_onRequest)(void) = nullptr;
 	void (*user_onReceive)(int) = nullptr;
 	void sda_rising_isr(void);
-	friend void i2c0_isr(void);
-	friend void i2c1_isr(void);
-	friend void i2c2_isr(void);
-	friend void i2c3_isr(void);
+	friend void lpi2c1_isr(void);
+	friend void lpi2c2_isr(void);
+	friend void lpi2c3_isr(void);
+	friend void lpi2c4_isr(void);
 	friend void sda_rising_isr0(void);
 	friend void sda_rising_isr1(void);
 };

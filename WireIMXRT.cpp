@@ -256,14 +256,66 @@ bool TwoWire::force_clock()
 //  Slave Mode
 //***************************************************
 
+// registers start on page 2835
 
 void TwoWire::begin(uint8_t address)
 {
-	// TODO: slave mode
+	CCM_CSCDR2 = (CCM_CSCDR2 & ~CCM_CSCDR2_LPI2C_CLK_PODF(63)) | CCM_CSCDR2_LPI2C_CLK_SEL;
+	hardware.clock_gate_register |= hardware.clock_gate_mask;
+	// setSDA() & setSCL() may be called before or after begin()
+	configSDApin(sda_pin_index_); // Setup SDA register
+	configSCLpin(scl_pin_index_); // setup SCL register
+
+	port->SCR = LPI2C_SCR_RST;
+	port->SCR = 0;
+
+	port->SCFGR1 = 0; // page 2841
+
+	port->SCFGR2 = 0; // page 2843;
+
+	port->SAMR = LPI2C_SAMR_ADDR0(address);
+
+	attachInterruptVector(hardware.irq_number, hardware.irq_function);
+	NVIC_SET_PRIORITY(hardware.irq_number, 144);
+	NVIC_ENABLE_IRQ(hardware.irq_number);
+
+	port->SIER = /*LPI2C_SIER_TDIE | */ LPI2C_SIER_RDIE | LPI2C_SIER_SDIE;
+
+	port->SCR = LPI2C_SCR_SEN;
 }
 
 
+void TwoWire::isr(void)
+{
+	uint32_t status = port->SSR;
+	uint32_t w1c_bits = status & 0xF00;
+	if (w1c_bits) port->SSR = w1c_bits;
 
+	//Serial.print("isr ");
+	//Serial.println(status, HEX);
+
+	if (status & LPI2C_SSR_RDF) { // Receive Data Flag
+		int rx = port->SRDR;
+		if (rx & 0x8000) {
+			rxBufferIndex = 0;
+			rxBufferLength = 0;
+		}
+		if (rxBufferLength < BUFFER_LENGTH) {
+			rxBuffer[rxBufferLength++] = rx & 255;
+		}
+		//Serial.print("rx = ");
+		//Serial.println(rx, HEX);
+	}
+
+	if (status & LPI2C_SSR_SDF) {
+		//Serial.println("Stop");
+		if (rxBufferLength > 0 && user_onReceive != nullptr) {
+			(*user_onReceive)(rxBufferLength);
+			rxBufferIndex = 0;
+			rxBufferLength = 0;
+		}
+	}
+}
 
 
 
@@ -329,12 +381,23 @@ FLASHMEM void TwoWire::configSCLpin(uint8_t i)
 
 
 
+#if defined(ARDUINO_TEENSY_MICROMOD)
+void lpi2c1_isr(void) { Wire.isr(); }
+void lpi2c3_isr(void) { Wire2.isr(); }
+void lpi2c4_isr(void) { Wire1.isr(); }
+void lpi2c2_isr(void) { Wire3.isr(); }
+#else
+void lpi2c1_isr(void) { Wire.isr(); }
+void lpi2c3_isr(void) { Wire1.isr(); }
+void lpi2c4_isr(void) { Wire2.isr(); }
+#endif
+
 PROGMEM
 constexpr TwoWire::I2C_Hardware_t TwoWire::i2c1_hardware = {
 	CCM_CCGR2, CCM_CCGR2_LPI2C1(CCM_CCGR_ON),
 		{{18, 3 | 0x10, &IOMUXC_LPI2C1_SDA_SELECT_INPUT, 1}, {0xff, 0xff, nullptr, 0}},
 		{{19, 3 | 0x10, &IOMUXC_LPI2C1_SCL_SELECT_INPUT, 1}, {0xff, 0xff, nullptr, 0}},
-	IRQ_LPI2C1
+	IRQ_LPI2C1, &lpi2c1_isr
 };
 TwoWire Wire(&IMXRT_LPI2C1, TwoWire::i2c1_hardware);
 
@@ -348,7 +411,7 @@ constexpr TwoWire::I2C_Hardware_t TwoWire::i2c3_hardware = {
 		{{17, 1 | 0x10, &IOMUXC_LPI2C3_SDA_SELECT_INPUT, 2}, {36, 2 | 0x10, &IOMUXC_LPI2C3_SDA_SELECT_INPUT, 1}},
 		{{16, 1 | 0x10, &IOMUXC_LPI2C3_SCL_SELECT_INPUT, 2}, {37, 2 | 0x10, &IOMUXC_LPI2C3_SCL_SELECT_INPUT, 1}},
 #endif
-	IRQ_LPI2C3
+	IRQ_LPI2C3, &lpi2c3_isr
 };
 //TwoWire Wire1(&IMXRT_LPI2C3, TwoWire::i2c3_hardware);
 
@@ -357,7 +420,7 @@ constexpr TwoWire::I2C_Hardware_t TwoWire::i2c4_hardware = {
 	CCM_CCGR6, CCM_CCGR6_LPI2C4_SERIAL(CCM_CCGR_ON),
 		{{25, 0 | 0x10, &IOMUXC_LPI2C4_SDA_SELECT_INPUT, 1}, {0xff, 0xff, nullptr, 0}},
 		{{24, 0 | 0x10, &IOMUXC_LPI2C4_SCL_SELECT_INPUT, 1}, {0xff, 0xff, nullptr, 0}},
-	IRQ_LPI2C4
+	IRQ_LPI2C4, &lpi2c4_isr
 };
 //TwoWire Wire2(&IMXRT_LPI2C4, TwoWire::i2c4_hardware);
 
@@ -376,10 +439,12 @@ constexpr TwoWire::I2C_Hardware_t TwoWire::i2c2_hardware = {
 	CCM_CCGR2, CCM_CCGR2_LPI2C2(CCM_CCGR_ON),
 		{{41, 2 | 0x10, &IOMUXC_LPI2C2_SDA_SELECT_INPUT, 1}, {0xff, 0xff, nullptr, 0}},
 		{{40, 2 | 0x10, &IOMUXC_LPI2C2_SCL_SELECT_INPUT, 1}, {0xff, 0xff, nullptr, 0}},
-	IRQ_LPI2C4
+	IRQ_LPI2C2, &lpi2c2_isr
 };
 TwoWire Wire3(&IMXRT_LPI2C2, TwoWire::i2c2_hardware);
 #endif
+
+
 
 
 
