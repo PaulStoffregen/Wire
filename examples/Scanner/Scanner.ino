@@ -142,7 +142,7 @@ void printKnownChips(byte address)
     case 0x46: Serial.print(F("PCA9685")); break;
     case 0x47: Serial.print(F("PCA9685")); break;
     case 0x48: Serial.print(F("ADS1115,PN532,TMP102,LM75,PCF8591,CS42448")); break;
-    case 0x49: Serial.print(F("ADS1115,TSL2561,PCF8591,CS42448")); break;
+    case 0x49: Serial.print(F("ADS1115,TSL2561,PCF8591,CS42448,TC74A1")); break;
     case 0x4A: Serial.print(F("ADS1115,Qwiic Keypad,CS42448")); break;
     case 0x4B: Serial.print(F("ADS1115,TMP102,BNO080,Qwiic Keypad,CS42448")); break;
     case 0x50: Serial.print(F("EEPROM,FRAM")); break;
