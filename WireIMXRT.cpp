@@ -18,6 +18,8 @@ FLASHMEM void TwoWire::begin(void)
 	// use 24 MHz clock
 	CCM_CSCDR2 = (CCM_CSCDR2 & ~CCM_CSCDR2_LPI2C_CLK_PODF(63)) | CCM_CSCDR2_LPI2C_CLK_SEL;
 	hardware.clock_gate_register |= hardware.clock_gate_mask;
+
+	IMXRT_LPI2C_t* port = (IMXRT_LPI2C_t*)portAddr;
 	port->MCR = LPI2C_MCR_RST;
 	setClock(100000);
 	// setSDA() & setSCL() may be called before or after begin()
@@ -72,6 +74,7 @@ size_t TwoWire::write(const uint8_t *data, size_t quantity)
 
 bool TwoWire::wait_idle()
 {
+	IMXRT_LPI2C_t* port = (IMXRT_LPI2C_t*)portAddr;
 	elapsedMillis timeout = 0;
 	while (1) {
 		uint32_t status = port->MSR; // pg 2899 & 2892
@@ -91,6 +94,7 @@ bool TwoWire::wait_idle()
 
 uint8_t TwoWire::endTransmission(uint8_t sendStop)
 {
+	IMXRT_LPI2C_t* port = (IMXRT_LPI2C_t*)portAddr;
 	uint32_t tx_len = txBufferLength;
 	if (!tx_len) return 4; // no address for transmit
 	if (!wait_idle()) return 4;
@@ -143,6 +147,7 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 
 uint8_t TwoWire::requestFrom(uint8_t address, uint8_t length, uint8_t sendStop)
 {
+	IMXRT_LPI2C_t* port = (IMXRT_LPI2C_t*)portAddr;
 	if (!wait_idle()) return 4;
 	address = (address & 0x7F) << 1;
 	if (length < 1) length = 1;
@@ -260,6 +265,7 @@ bool TwoWire::force_clock()
 
 void TwoWire::begin(uint8_t address)
 {
+	IMXRT_LPI2C_t* port = (IMXRT_LPI2C_t*)portAddr;
 	CCM_CSCDR2 = (CCM_CSCDR2 & ~CCM_CSCDR2_LPI2C_CLK_PODF(63)) | CCM_CSCDR2_LPI2C_CLK_SEL;
 	hardware.clock_gate_register |= hardware.clock_gate_mask;
 	// setSDA() & setSCL() may be called before or after begin()
@@ -282,6 +288,7 @@ void TwoWire::begin(uint8_t address)
 
 void TwoWire::isr(void)
 {
+	IMXRT_LPI2C_t* port = (IMXRT_LPI2C_t*)portAddr;
 	uint32_t status = port->SSR;
 	uint32_t w1c_bits = status & 0xF00;
 	if (w1c_bits) port->SSR = w1c_bits;
@@ -412,7 +419,7 @@ constexpr TwoWire::I2C_Hardware_t TwoWire::i2c1_hardware = {
 		{{19, 3 | 0x10, &IOMUXC_LPI2C1_SCL_SELECT_INPUT, 1}, {0xff, 0xff, nullptr, 0}},
 	IRQ_LPI2C1, &lpi2c1_isr
 };
-TwoWire Wire(&IMXRT_LPI2C1, TwoWire::i2c1_hardware);
+TwoWire Wire(IMXRT_LPI2C1_ADDRESS, TwoWire::i2c1_hardware);
 
 PROGMEM
 constexpr TwoWire::I2C_Hardware_t TwoWire::i2c3_hardware = {
@@ -438,11 +445,11 @@ constexpr TwoWire::I2C_Hardware_t TwoWire::i2c4_hardware = {
 //TwoWire Wire2(&IMXRT_LPI2C4, TwoWire::i2c4_hardware);
 
 #if defined(ARDUINO_TEENSY_MICROMOD)
-	TwoWire Wire2(&IMXRT_LPI2C3, TwoWire::i2c3_hardware);
-	TwoWire Wire1(&IMXRT_LPI2C4, TwoWire::i2c4_hardware);
+	TwoWire Wire2(IMXRT_LPI2C3_ADDRESS, TwoWire::i2c3_hardware);
+	TwoWire Wire1(IMXRT_LPI2C4_ADDRESS, TwoWire::i2c4_hardware);
 #else
-	TwoWire Wire1(&IMXRT_LPI2C3, TwoWire::i2c3_hardware);
-	TwoWire Wire2(&IMXRT_LPI2C4, TwoWire::i2c4_hardware);
+	TwoWire Wire1(IMXRT_LPI2C3_ADDRESS, TwoWire::i2c3_hardware);
+	TwoWire Wire2(IMXRT_LPI2C4_ADDRESS, TwoWire::i2c4_hardware);
 #endif
 
 
@@ -454,7 +461,7 @@ constexpr TwoWire::I2C_Hardware_t TwoWire::i2c2_hardware = {
 		{{40, 2 | 0x10, &IOMUXC_LPI2C2_SCL_SELECT_INPUT, 1}, {0xff, 0xff, nullptr, 0}},
 	IRQ_LPI2C2, &lpi2c2_isr
 };
-TwoWire Wire3(&IMXRT_LPI2C2, TwoWire::i2c2_hardware);
+TwoWire Wire3(IMXRT_LPI2C2_ADDRESS, TwoWire::i2c2_hardware);
 #endif
 
 
@@ -467,6 +474,7 @@ TwoWire Wire3(&IMXRT_LPI2C2, TwoWire::i2c2_hardware);
 
 void TwoWire::setClock(uint32_t frequency)
 {
+	IMXRT_LPI2C_t* port = (IMXRT_LPI2C_t*)portAddr;
 	port->MCR = 0;
 	if (frequency < 400000) {
 		// 100 kHz
