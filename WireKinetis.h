@@ -101,6 +101,7 @@ public:
 	constexpr TwoWire(uintptr_t port_addr, const I2C_Hardware_t &myhardware)
 		: port_addr(port_addr), hardware(myhardware) {
 	}
+	friend uintptr_t Teensyduino_Test_constinit_Wire(int instance, int index);
 	void begin();
 	void begin(uint8_t address);
 	void begin(int address) {

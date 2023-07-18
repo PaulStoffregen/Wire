@@ -56,6 +56,7 @@ class TwoWire : public Stream
     static void sda_rising_isr(void);
   public:
     TwoWire();
+    friend uintptr_t Teensyduino_Test_constinit_Wire(int instance, int index);
     void begin();
     void begin(uint8_t address);
     void begin(int address) {
