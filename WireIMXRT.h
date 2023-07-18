@@ -64,8 +64,8 @@ public:
 	static const I2C_Hardware_t i2c3_hardware;
 	static const I2C_Hardware_t i2c4_hardware;
 public:
-	constexpr TwoWire(IMXRT_LPI2C_t *myport, const I2C_Hardware_t &myhardware)
-		: port(myport), hardware(myhardware) {
+	constexpr TwoWire(const uintptr_t _portAddr, const I2C_Hardware_t &myhardware)
+		: portAddr(_portAddr), hardware(myhardware) {
 	}
 	void begin();
 	void begin(uint8_t address);
@@ -75,7 +75,7 @@ public:
 	void end();
 	void setClock(uint32_t frequency);
 	void setSDA(uint8_t pin);
-	void setSCL(uint8_t pin); 
+	void setSCL(uint8_t pin);
 	void beginTransmission(uint8_t address) {
 		txBuffer[0] = (address << 1);
 		transmitting = 1;
@@ -162,7 +162,7 @@ private:
 	void configSCLpin(uint8_t index);
 	bool wait_idle();
 	bool force_clock();
-	IMXRT_LPI2C_t * const port;
+	const uintptr_t portAddr;
 	const I2C_Hardware_t &hardware;
 	uint8_t	sda_pin_index_ = 0x0;	// default is always first item
 	uint8_t	scl_pin_index_ = 0x0;
