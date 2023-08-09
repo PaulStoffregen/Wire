@@ -124,6 +124,13 @@ uint8_t TwoWire::endTransmission(uint8_t sendStop)
 			port->MCR |= LPI2C_MCR_RTF | LPI2C_MCR_RRF; // clear FIFOs
 			return 4; // we lost bus arbitration to another master
 		}
+		
+		if (status & LPI2C_MSR_FEF) {
+			port->MCR |= LPI2C_MCR_RTF | LPI2C_MCR_RRF; // clear FIFOs
+			// empirical evidence suggests NOT trying to send a STOP condition!
+			return 5; // FIFO error
+		}
+		
 		if (status & LPI2C_MSR_NDF) {
 			port->MCR |= LPI2C_MCR_RTF | LPI2C_MCR_RRF; // clear FIFOs
 			port->MTDR = LPI2C_MTDR_CMD_STOP;
