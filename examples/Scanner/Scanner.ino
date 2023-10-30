@@ -126,11 +126,12 @@ void printKnownChips(byte address)
     case 0x30: Serial.print(F("Si7210")); break;
     case 0x31: Serial.print(F("Si7210")); break;
     case 0x32: Serial.print(F("Si7210")); break;
-    case 0x33: Serial.print(F("MAX11614,MAX11615,Si7210")); break;
+    case 0x33: Serial.print(F("MAX11614,MAX11615,Si7210,MLX90640,MLX90641")); break;
     case 0x34: Serial.print(F("MAX11612,MAX11613")); break;
     case 0x35: Serial.print(F("MAX11616,MAX11617")); break;
     case 0x38: Serial.print(F("RA8875,FT6206,MAX98390")); break;
     case 0x39: Serial.print(F("TSL2561, APDS9960")); break;
+    case 0x3A: Serial.print(F("MLX90632")); break;
     case 0x3C: Serial.print(F("SSD1306,DigisparkOLED")); break;
     case 0x3D: Serial.print(F("SSD1306")); break;
     case 0x40: Serial.print(F("PCA9685,Si7021,MS8607")); break;
@@ -154,7 +155,7 @@ void printKnownChips(byte address)
     case 0x56: Serial.print(F("EEPROM")); break;
     case 0x57: Serial.print(F("EEPROM")); break;
     case 0x58: Serial.print(F("TPA2016,MAX21100")); break;
-    case 0x5A: Serial.print(F("MPR121")); break;
+    case 0x5A: Serial.print(F("MPR121,MLX90614")); break;
     case 0x60: Serial.print(F("MPL3115,MCP4725,MCP4728,TEA5767,Si5351")); break;
     case 0x61: Serial.print(F("MCP4725,AtlasEzoDO")); break;
     case 0x62: Serial.print(F("LidarLite,MCP4725,AtlasEzoORP")); break;
