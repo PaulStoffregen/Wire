@@ -43,37 +43,38 @@
 #define WIRE_HAS_END 1
 
 
+// WIRE_INTERFACES_COUNT is defined in core library pins_arduino.h
+#if WIRE_INTERFACES_COUNT >= 1
+#define WIRE_IMPLEMENT_WIRE
+#endif
+#if WIRE_INTERFACES_COUNT >= 2
+#define WIRE_IMPLEMENT_WIRE1
+#endif
+#if WIRE_INTERFACES_COUNT >= 3
+#define WIRE_IMPLEMENT_WIRE2
+#endif
+#if WIRE_INTERFACES_COUNT >= 4
+#define WIRE_IMPLEMENT_WIRE3
+#endif
+
+
 // Teensy LC
 #if defined(__MKL26Z64__)
-#define WIRE_IMPLEMENT_WIRE
-//Wire1 consumes precious memory on Teensy LC
-//#define WIRE_IMPLEMENT_WIRE1
 #define WIRE_HAS_STOP_INTERRUPT
 
 // Teensy 3.0
 #elif defined(__MK20DX128__)
-#define WIRE_IMPLEMENT_WIRE
 
 // Teensy 3.1 & 3.2
 #elif defined(__MK20DX256__)
-#define WIRE_IMPLEMENT_WIRE
-#define WIRE_IMPLEMENT_WIRE1
 
 // Teensy 3.5
 #elif defined(__MK64FX512__)
-#define WIRE_IMPLEMENT_WIRE
-#define WIRE_IMPLEMENT_WIRE1
-#define WIRE_IMPLEMENT_WIRE2
 #define WIRE_HAS_START_INTERRUPT
 #define WIRE_HAS_STOP_INTERRUPT
 
 // Teensy 3.6
 #elif defined(__MK66FX1M0__)
-#define WIRE_IMPLEMENT_WIRE
-#define WIRE_IMPLEMENT_WIRE1
-#define WIRE_IMPLEMENT_WIRE2
-//Wire3 is seldom used on Teensy 3.6
-//#define WIRE_IMPLEMENT_WIRE3
 #define WIRE_HAS_START_INTERRUPT
 #define WIRE_HAS_STOP_INTERRUPT
 
