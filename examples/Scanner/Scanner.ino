@@ -25,7 +25,7 @@ void setup() {
   Wire3.begin();
 #endif
   Serial.begin(9600);
-  while (!Serial);        // Leonardo: wait for serial monitor
+  while (!Serial);   // Wait for Arduino Serial Monitor
   Serial.println(F("\nI2C Scanner"));
 }
 
@@ -33,30 +33,30 @@ void setup() {
 void loop() {
   Serial.println();
 #if WIRE_INTERFACES_COUNT >= 1
-  scan(Wire, "Wire");
+  Serial.println(F("Scanning Wire..."));
+  scan(Wire);
   delay(500);
 #endif
 #if WIRE_INTERFACES_COUNT >= 2
-  scan(Wire1, "Wire1");
+  Serial.println(F("Scanning Wire1..."));
+  scan(Wire1);
   delay(500);
 #endif
 #if WIRE_INTERFACES_COUNT >= 3
-  scan(Wire2, "Wire2");
+  Serial.println(F("Scanning Wire2..."));
+  scan(Wire2);
   delay(500);
 #endif
 #if WIRE_INTERFACES_COUNT >= 4
-  scan(Wire3, "Wire3");
+  Serial.println(F("Scanning Wire3..."));
+  scan(Wire3);
   delay(500);
 #endif
   delay(5000);           // wait 5 seconds for next scan
 }
 
 
-void scan(TwoWire &myport, const char *name) {
-  Serial.print(F("Scanning "));
-  Serial.print(name);
-  Serial.println(F("..."));
-
+void scan(TwoWire &myport) {
   int nDevices = 0;
   for (int address = 1; address < 127; address++) {
     // The i2c_scanner uses the return value of
