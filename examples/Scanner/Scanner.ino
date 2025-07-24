@@ -9,6 +9,15 @@
 
 #include <Wire.h>
 
+// Try to work with boards which don't define WIRE_INTERFACES_COUNT
+#ifndef WIRE_INTERFACES_COUNT
+#ifdef WIRE_HOWMANY
+#define WIRE_INTERFACES_COUNT WIRE_HOWMANY
+#else
+#define WIRE_INTERFACES_COUNT 1
+#endif
+#endif
+
 void setup() {
 #if WIRE_INTERFACES_COUNT >= 1
   //Wire.setSCL(16);  // uncomment these to use alternate Wire pins
