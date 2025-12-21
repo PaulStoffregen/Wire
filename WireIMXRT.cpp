@@ -286,7 +286,7 @@ void TwoWire::begin(uint8_t address)
 	attachInterruptVector(hardware.irq_number, hardware.irq_function);
 	NVIC_SET_PRIORITY(hardware.irq_number, 144);
 	NVIC_ENABLE_IRQ(hardware.irq_number);
-	port->SIER = LPI2C_SIER_TDIE |  LPI2C_SIER_RDIE | LPI2C_SIER_SDIE;
+	port->SIER = LPI2C_SIER_TDIE | LPI2C_SIER_RDIE | LPI2C_SIER_SDIE | LPI2C_SIER_RSIE;
 	transmitting = 0;
 	slave_mode = 1;
 	port->SCR = LPI2C_SCR_SEN;
@@ -331,7 +331,7 @@ void TwoWire::isr(void)
 		//Serial.println("tx");
 	}
 
-	if (status & LPI2C_SSR_SDF) { // Stop
+	if ((status & LPI2C_SSR_SDF) || (status & LPI2C_SSR_RSF)) { // Stop or Repeat Start
 		//Serial.println("Stop");
 		if (rxBufferLength > 0 && user_onReceive != nullptr) {
 			(*user_onReceive)(rxBufferLength);
