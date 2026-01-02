@@ -281,7 +281,8 @@ void TwoWire::begin(uint8_t address)
 	port->SCR = LPI2C_SCR_RST;
 	port->SCR = 0;
 	port->SCFGR1 = LPI2C_SCFGR1_TXDSTALL | LPI2C_SCFGR1_RXSTALL; // page 2841
-	port->SCFGR2 = 0; // page 2843;
+	port->SCFGR2 = LPI2C_SCFGR2_FILTSDA(2) | LPI2C_SCFGR2_FILTSCL(2)
+		| LPI2C_SCFGR2_DATAVD(3) | LPI2C_SCFGR2_CLKHOLD(2); // page 2803 and 2844
 	port->SAMR = LPI2C_SAMR_ADDR0(address);
 	attachInterruptVector(hardware.irq_number, hardware.irq_function);
 	NVIC_SET_PRIORITY(hardware.irq_number, 144);
@@ -289,7 +290,7 @@ void TwoWire::begin(uint8_t address)
 	port->SIER = LPI2C_SIER_TDIE | LPI2C_SIER_RDIE | LPI2C_SIER_SDIE | LPI2C_SIER_RSIE;
 	transmitting = 0;
 	slave_mode = 1;
-	port->SCR = LPI2C_SCR_SEN;
+	port->SCR = LPI2C_SCR_SEN | LPI2C_SCR_FILTEN;
 }
 
 
