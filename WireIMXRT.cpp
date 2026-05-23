@@ -421,7 +421,7 @@ void lpi2c4_isr(void) { Wire2.isr(); }
 #endif
 
 PROGMEM
-constexpr TwoWire::I2C_Hardware_t TwoWire::i2c1_hardware = {
+const TwoWire::I2C_Hardware_t TwoWire::i2c1_hardware = {
 	CCM_CCGR2, CCM_CCGR2_LPI2C1(CCM_CCGR_ON),
 		{{18, 3 | 0x10, &IOMUXC_LPI2C1_SDA_SELECT_INPUT, 1}, {0xff, 0xff, nullptr, 0}},
 		{{19, 3 | 0x10, &IOMUXC_LPI2C1_SCL_SELECT_INPUT, 1}, {0xff, 0xff, nullptr, 0}},
@@ -430,7 +430,7 @@ constexpr TwoWire::I2C_Hardware_t TwoWire::i2c1_hardware = {
 TwoWire Wire(IMXRT_LPI2C1_ADDRESS, TwoWire::i2c1_hardware);
 
 PROGMEM
-constexpr TwoWire::I2C_Hardware_t TwoWire::i2c3_hardware = {
+const TwoWire::I2C_Hardware_t TwoWire::i2c3_hardware = {
 	CCM_CCGR2, CCM_CCGR2_LPI2C3(CCM_CCGR_ON),
 #if defined(ARDUINO_TEENSY41)
 		{{17, 1 | 0x10, &IOMUXC_LPI2C3_SDA_SELECT_INPUT, 2}, {44, 2 | 0x10, &IOMUXC_LPI2C3_SDA_SELECT_INPUT, 1}},
@@ -444,7 +444,7 @@ constexpr TwoWire::I2C_Hardware_t TwoWire::i2c3_hardware = {
 //TwoWire Wire1(&IMXRT_LPI2C3, TwoWire::i2c3_hardware);
 
 PROGMEM
-constexpr TwoWire::I2C_Hardware_t TwoWire::i2c4_hardware = {
+const TwoWire::I2C_Hardware_t TwoWire::i2c4_hardware = {
 	CCM_CCGR6, CCM_CCGR6_LPI2C4_SERIAL(CCM_CCGR_ON),
 		{{25, 0 | 0x10, &IOMUXC_LPI2C4_SDA_SELECT_INPUT, 1}, {0xff, 0xff, nullptr, 0}},
 		{{24, 0 | 0x10, &IOMUXC_LPI2C4_SCL_SELECT_INPUT, 1}, {0xff, 0xff, nullptr, 0}},
