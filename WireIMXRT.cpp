@@ -463,7 +463,7 @@ const TwoWire::I2C_Hardware_t TwoWire::i2c4_hardware = {
 
 #if defined(ARDUINO_TEENSY_MICROMOD)
 PROGMEM
-constexpr TwoWire::I2C_Hardware_t TwoWire::i2c2_hardware = {
+const TwoWire::I2C_Hardware_t TwoWire::i2c2_hardware = {
 	CCM_CCGR2, CCM_CCGR2_LPI2C2(CCM_CCGR_ON),
 		{{41, 2 | 0x10, &IOMUXC_LPI2C2_SDA_SELECT_INPUT, 1}, {0xff, 0xff, nullptr, 0}},
 		{{40, 2 | 0x10, &IOMUXC_LPI2C2_SCL_SELECT_INPUT, 1}, {0xff, 0xff, nullptr, 0}},
