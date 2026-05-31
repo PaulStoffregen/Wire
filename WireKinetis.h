@@ -100,7 +100,7 @@ public:
 	static const I2C_Hardware_t i2c3_hardware;
 public:
 	constexpr TwoWire(uintptr_t port_addr, const I2C_Hardware_t &myhardware)
-		: port_addr(port_addr), hardware(myhardware) {
+		: portAddr(port_addr), hardware(myhardware) {
 	}
 	friend uintptr_t Teensyduino_Test_constinit_Wire(int instance, int index);
 	void begin();
@@ -192,13 +192,13 @@ public:
 	}
 	using Print::write;
 private:
-	KINETIS_I2C_t& port() { return (*(KINETIS_I2C_t *) port_addr); }
+	KINETIS_I2C_t& port() { return (*(KINETIS_I2C_t *) portAddr); }
 	uint8_t i2c_status(void) {
 		return port().S;
 	}
 	void isr(void);
 	bool wait_idle(void);
-	uintptr_t port_addr;
+	uintptr_t portAddr;
 	const I2C_Hardware_t &hardware;
 	uint8_t rxBuffer[BUFFER_LENGTH] = {};
 	uint8_t rxBufferIndex = 0;
